@@ -26,6 +26,7 @@ class _UmarosCollide:
         from data.bosses import name_enemy
         self.giant_umaro_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
         self.jump_mod(name_enemy["Kefka (Final)"])
+        self.jump_animation_mod()
         self.special_attack_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
 
     def spec_address(self, enemy):
@@ -117,6 +118,49 @@ class _UmarosCollide:
         space = Reserve(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END, "jump: load jumper's relic effects", asm.NOP())
         space.write(
             asm.JSR(jumper_relic_effects, asm.ABS),
+        )
+
+    def jump_animation_mod(self):
+        # a jumper with more landings to come (only the dragon horn does that) bounces: down onto
+        # the target and straight back up, and home only after the last landing. the game's own
+        # animation hops home after every landing, and the jumper is hidden only when the next one
+        # starts
+        #
+        # the landing of a monster's jump is animation script 0x84 (D1/EAD8 has the scripts'
+        # pointers, they are in bank D0). it is copied here with the bounce added after the fall
+        LANDING_SCRIPT = 0x84
+        SCRIPT_POINTERS = 0x11ead8
+        LANDING_START, LANDING_END = 0x10682d, 0x106855
+        FALL_END = 0x10684e                 # the fall's last byte; what follows is the hop home and the end
+
+        landing = Read(LANDING_START, LANDING_END)
+        fall = landing[:FALL_END - LANDING_START + 1]
+        hop_home = landing[FALL_END - LANDING_START + 1:]
+
+        FALL_STEPS = 0x13                   # the fall's loop count: 20 steps of 8 pixels
+        UP_8_PIXELS = 0xc7
+        assert fall[-6:] == [0x89, FALL_STEPS, 0x86, 0x27, 0x0f, 0x8a]   # loop: move down 8 pixels, wait a frame
+        assert hop_home == [0xd1, 0x00, 0x0f, 0xe3, 0x08, 0x03, 0xff]
+
+        src = [
+            fall,
+            0x80, 0x7d, len(hop_home),      # skip the hop home if another landing is coming
+            hop_home,
+
+            0x89, FALL_STEPS,               # the way the fall came, backwards
+                0x86, UP_8_PIXELS,
+                0x0f,
+            0x8a,
+            0xe1, 0x80,                     # hide the jumper
+            hop_home,                       # home, unseen, where the next landing starts from
+        ]
+        space = Write(Bank.D0, src, "umaros collide: monster jump landing animation")
+        landing_script = space.start_address
+
+        pointer = SCRIPT_POINTERS + LANDING_SCRIPT * 2
+        space = Reserve(pointer, pointer + 1, "monster jump landing animation script pointer")
+        space.write(
+            (landing_script & 0xffff).to_bytes(2, "little"),
         )
 
     def graphics_loader_mod(self, giant_umaro_graphics):

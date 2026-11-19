@@ -166,6 +166,7 @@ class Enemies():
         final_kefka.name = "Ultimaro"
         final_kefka.special_name = "Yeti Punch"     # was Havoc Wing
         final_kefka.speed = min(round(final_kefka.speed * 1.1), 2 ** 8 - 1)
+        final_kefka.absorb_elements |= umaro.absorb_elements   # ice, as umaro
 
     def boss_experience(self):
         from data.bosses_custom_exp import custom_exp
