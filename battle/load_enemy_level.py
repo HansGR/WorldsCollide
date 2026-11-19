@@ -48,12 +48,12 @@ class _LoadEnemyLevel:
         )
 
     def _ultimaro_levels_mod(self):
-        # UMAROS COLLIDE: the giant umaro at the end of the final battle is 10 levels higher than
+        # UMAROS COLLIDE: the giant umaro at the end of the final battle is 5 levels higher than
         # final kefka would be, after scaling and objectives
         # input: x = offset of the enemy's data, y = the enemy's slot. 8 bit a, 16 bit x/y
         from data.bosses import name_enemy
         ENEMY_DATA_SIZE = 32
-        LEVELS, MAX_LEVEL = 10, 99
+        LEVELS, MAX_LEVEL = 5, 99
 
         src = [
             asm.CPX(name_enemy["Kefka (Final)"] * ENEMY_DATA_SIZE, asm.IMM16),

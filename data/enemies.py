@@ -160,7 +160,7 @@ class Enemies():
         umaro.speed = min(umaro.original_speed * 2, 2 ** 8 - 1)
 
         # the last tier of the final battle is a giant umaro (battle/umaros_collide.py has his sprite)
-        # and is a bit harder than kefka was: a tenth faster, and 10 levels higher whatever his level
+        # and is a bit harder than kefka was: a tenth faster, and 5 levels higher whatever his level
         # is when the battle loads him (battle/load_enemy_level.py)
         final_kefka = self.enemies[bosses.name_enemy["Kefka (Final)"]]
         final_kefka.name = "Ultimaro"
