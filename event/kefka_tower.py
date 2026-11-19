@@ -284,8 +284,8 @@ class KefkaTower(Event):
         # hit and thrown off the top of the screen. then, on a black screen: the tower is reset
         # (as when leaving it: switches, doors, y party switching), parties 2 and 3 are dissolved
         # and party 1 falls into umaro's den, as if through the trapdoor from his cave.
-        # the airship waits outside narshe. the carving in the den starts the final battle
-        # (event/umaro_cave.py)
+        # the airship waits outside narshe. the carving in the den starts the final battle, as it
+        # does for a party which came through the cave (event/umaro_cave.py)
         KEFKA_TOWER_RESET = 0xc0f7d             # vanilla: reset the tower's state when leaving it
         FALL_INTO_DEN = 0xcd9a6                 # vanilla: land in umaro's den after the trapdoor
         NARSHE_X, NARSHE_Y = 115, 34            # world of ruin map tile below narshe
@@ -345,7 +345,6 @@ class KefkaTower(Event):
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
 
-            field.SetEventBit(event_bit.KNOCKED_INTO_UMAROS_DEN),
 
             # park the airship outside narshe (as event/nikeah.py does), then fall into the den
             field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),

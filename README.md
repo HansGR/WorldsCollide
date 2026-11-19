@@ -8,9 +8,9 @@ Complete objectives while searching the worlds for characters, espers, and items
 
 This branch is a spinoff of Worlds Collide made for an event. Every seed rolled from it has these changes:
 
-- The frozen esper (Tritoch) fight in the World of Ruin Narshe is always Umaro: level 99, with the HP and MP of a level 99 enemy and twice his usual speed. With shuffled or original bosses, the boss he replaces takes his place.
+- The frozen esper (Tritoch) fight in the World of Ruin Narshe is always Umaro: level 99, with the HP and MP of a level 99 enemy and twice his usual speed. With shuffled or original bosses, the boss he replaces takes his place. Beat him and the way to the final battle is open: jump into Umaro's Cave and find the den.
 - Kefka is not the final boss. At the top of his tower he knocks every party off the screen instead of fighting: the tower is reset, y party switching is turned off, and party 1 lands in Umaro's Den (as if through the trapdoor in Umaro's Cave). The airship waits outside Narshe.
-- In the den, the bone carving asks "Touch the eye of the carving?". Yes brings Umaro stomping in, then the final battle's lineup with every available character, then the final battle. From then on the carving no longer gives the cave's reward, so that reward is always an item.
+- In the den, the bone carving asks "Touch the eye of the carving?", whichever way the party got there. Yes brings Umaro stomping in, then the final battle's lineup with every available character, then the final battle. The carving no longer gives the cave's own check: its reward is always an item and can't be collected, and the boss in Umaro's place is not fought.
 - The last tier of the final battle is Ultimaro: Umaro at twice the size of his usual sprite, 5 levels higher and a tenth faster than final Kefka would be. He fights with ice where Kefka had fire and bolt (Storm, Surge, Ice 3), and sometimes jumps as Umaro does, landing 2 to 4 times as if he wore a Dragon Horn. Havoc Wing is Yeti Punch, HyperDrive is Yeti Blast, and Goner is U'ghaaaa ("Yeti used a Green Cherry!").
 - The Moogle Charm is the Yeti Charm: no random encounters, and its wearer is always berserk.
 - Kefka looks like Umaro wherever he appears on a map. Choosing sprites with `-cspr` chooses Kefka's too.

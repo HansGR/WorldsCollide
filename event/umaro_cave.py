@@ -8,8 +8,8 @@ class UmaroCave(Event):
         return self.characters.UMARO
 
     def init_rewards(self):
-        # UMAROS COLLIDE: an item only. after kefka the carving starts the final battle instead of
-        # giving its reward, which must not be something a route to kefka depends on
+        # UMAROS COLLIDE: an item only. the carving starts the final battle instead of giving its
+        # reward, which must not be something a route depends on
         self.reward = self.add_reward(RewardType.ITEM)
 
     def mod(self):
@@ -40,17 +40,18 @@ class UmaroCave(Event):
         self.log_reward(self.reward)
 
     def umaros_collide_mod(self):
-        # UMAROS COLLIDE: once kefka has knocked the party into the den (event/kefka_tower.py),
-        # the carving starts the final battle: "touch the eye of the carving?", umaro stomps
-        # in as he does before his own fight, then every available character joins the final
-        # lineup in kefka's lair and the final battle begins (kefka tower's lineup and battle)
+        # UMAROS COLLIDE: the carving starts the final battle, for whoever reaches the den: through
+        # the cave (past the level 99 umaro at the frozen esper) or sent there by kefka
+        # (event/kefka_tower.py). "touch the eye of the carving?", umaro stomps in as he does before
+        # his own fight, then every available character joins the final lineup in kefka's lair and
+        # the final battle begins (kefka tower's lineup and battle).
+        # the cave's own check (the boss in umaro's place and the reward) is never reached
         CARVING_EVENT = 0xcd6eb                 # if the check is done return, else the carving scene
         CARVING_SCENE = 0xcd6f1
         UMARO_ENTRANCE_START, UMARO_ENTRANCE_END = 0xcd737, 0xcd776  # party startled, umaro stomps in
         KEFKA_LAIR = 0x164                      # the map the final lineup and battle start from
         SHOW_CASEWORD_CHARACTERS = 0xac9f3
         FINAL_LINEUP = 0xa0e46                  # kefka tower: final lineup, final battle, ending
-        GOT_CARVING_REWARD = 0x27a
 
         touch_dialog = 1524 # vanilla: "what's with this carving? ..." (removed above)
         self.dialogs.set_text(touch_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
@@ -58,11 +59,6 @@ class UmaroCave(Event):
         self.dialogs.set_text(roar_dialog, "UMARO: U'ghaaaa!!<end>")
 
         src = [
-            field.BranchIfEventBitSet(event_bit.KNOCKED_INTO_UMAROS_DEN, "FINAL_BATTLE"),
-            field.ReturnIfEventBitSet(GOT_CARVING_REWARD),
-            field.Branch(CARVING_SCENE),
-
-            "FINAL_BATTLE",
             field.DialogBranch(touch_dialog, dest1 = "TOUCH", dest2 = field.RETURN),
 
             "TOUCH",
