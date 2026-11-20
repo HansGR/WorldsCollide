@@ -87,12 +87,29 @@ class Data:
         import data.text as text
         from data.spell_names import name_id
         ABILITY_NAMES_START, FIRST_ABILITY, NAME_SIZE = 0x26f7b9, 81, 10
-        for ability, name in (("HyperDrive", "Yeti Blast"), ("Goner", "U'ghaaaa")):
+        for ability, name in (("HyperDrive", "Yeti Blast"), ("Goner", "U'ghaaaa"), ("Revenger", "Enrager")):
             name_bytes = text.get_bytes(name, text.TEXT2)
             name_bytes += [0xff] * (NAME_SIZE - len(name_bytes))
             self.rom.set_bytes(ABILITY_NAMES_START + (name_id[ability] - FIRST_ABILITY) * NAME_SIZE, name_bytes)
 
+    def umaros_collide_enrager(self):
+        # UMAROS COLLIDE: revenger, which only final kefka has, is enrager: the bserk spell (as it is
+        # in this seed) cast on the whole party. it can miss, be reflected and be absorbed by runic
+        # as bserk can
+        from data.spell_names import name_id
+        from data.ability_data import AbilityData
+        ABILITY_DATA_START = 0x046ac0
+
+        revenger = ABILITY_DATA_START + name_id["Revenger"] * AbilityData.DATA_SIZE
+        revenger_targets = self.rom.get_bytes(revenger, 1)[0]      # all of the other side
+
+        enrager = self.spells.spells[name_id["Bserk"]].ability_data()
+        enrager[0] = revenger_targets
+        self.rom.set_bytes(revenger, enrager)
+
     def write(self):
+        self.umaros_collide_enrager()
+
         if self.args.steveify:
             import data.text as text
             ability_name_bytes = bytearray()

@@ -279,8 +279,8 @@ class EnemyScripts():
                        ai_instr.RandomAttack(name_id["Surge"], nothing, special))
 
         # at 53% hp and below, the turns after goner
-        script.replace(ai_instr.RandomAttack(special, train, revenger),
-                       ai_instr.RandomAttack(special, name_id["Ice 3"], name_id["Surge"]))
+        script.replace(ai_instr.RandomAttack(special, train, revenger),      # (revenger is enrager, data/data.py)
+                       ai_instr.RandomAttack(special, name_id["Ice 3"], revenger))
         script.replace(ai_instr.RandomAttack(train, special, revenger),
                        ai_instr.RandomAttack(train, special, JUMP))
         script.replace(ai_instr.RandomAttack(special, special, nothing),
