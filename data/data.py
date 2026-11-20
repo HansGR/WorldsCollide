@@ -94,18 +94,21 @@ class Data:
 
     def umaros_collide_enrager(self):
         # UMAROS COLLIDE: revenger, which only final kefka has, is enrager: the bserk spell (as it is
-        # in this seed) cast on the whole party. it can miss, be reflected and be absorbed by runic
-        # as bserk can
+        # in this seed) cast on the whole party, with revenger's animation. unlike bserk it can
+        # not be reflected or absorbed by runic
         from data.spell_names import name_id
         from data.ability_data import AbilityData
         ABILITY_DATA_START = 0x046ac0
+        NOT_REFLECTABLE, RUNIC = 0x02, 0x08     # flags2
 
         revenger = ABILITY_DATA_START + name_id["Revenger"] * AbilityData.DATA_SIZE
         revenger_targets = self.rom.get_bytes(revenger, 1)[0]      # all of the other side
 
-        enrager = self.spells.spells[name_id["Bserk"]].ability_data()
-        enrager[0] = revenger_targets
-        self.rom.set_bytes(revenger, enrager)
+        enrager = self.spells.spells[name_id["Bserk"]]
+        enrager = AbilityData(name_id["Revenger"], enrager.ability_data())
+        enrager.targets = revenger_targets
+        enrager.flags2 = (enrager.flags2 | NOT_REFLECTABLE) & ~RUNIC
+        self.rom.set_bytes(revenger, enrager.ability_data())
 
     def write(self):
         self.umaros_collide_enrager()
