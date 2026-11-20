@@ -160,12 +160,12 @@ class Enemies():
         umaro.speed = min(umaro.original_speed * 2, 2 ** 8 - 1)
 
         # the last tier of the final battle is a giant umaro (battle/umaros_collide.py has his sprite)
-        # and is a bit harder than kefka was: a tenth faster, and 5 levels higher whatever his level
+        # and is harder than kefka was: a fifth faster, and 5 levels higher whatever his level
         # is when the battle loads him (battle/load_enemy_level.py)
         final_kefka = self.enemies[bosses.name_enemy["Kefka (Final)"]]
         final_kefka.name = "Ultimaro"
         final_kefka.special_name = "Yeti Punch"     # was Havoc Wing
-        final_kefka.speed = min(round(final_kefka.speed * 1.1), 2 ** 8 - 1)
+        final_kefka.speed = min(round(final_kefka.speed * 1.2), 2 ** 8 - 1)
         final_kefka.absorb_elements |= umaro.absorb_elements   # ice, as umaro
 
     def boss_experience(self):

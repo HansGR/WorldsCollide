@@ -300,8 +300,13 @@ class KefkaTower(Event):
         goner_dialog = 140  # vanilla: "the end comes...beyond chaos."
         self.dialogs.set_single_line_battle_text(goner_dialog, "Yeti used a Green Cherry!<wait 60 frames><end>")
 
+        # they are hit, and a moment later thrown
+        HIT_SOUND = 245                         # ifrit/terra knocking the party back with magic
+        THROWN_SOUND = 196                      # vanilla: as kefka fires the light of judgment, at the end of this scene
+        THROWN_AFTER = 16                       # frames
+
         src = [
-            field.PlaySoundEffect(245),
+            field.PlaySoundEffect(HIT_SOUND),
             field.FlashScreen(field.Flash.WHITE),
             field.LoadCreatedCharacters(),
         ]
@@ -314,6 +319,7 @@ class KefkaTower(Event):
                     field_entity.AnimateAttacked(),
                     field_entity.DisableWalkingAnimation(),
                     field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                    field_entity.Pause(THROWN_AFTER // 4),
                     field_entity.Move(direction.UP, 8),
                     field_entity.Move(direction.UP, 8),
                     field_entity.Hide(),
@@ -321,6 +327,8 @@ class KefkaTower(Event):
                 f"NOT_PRESENT_{character}",
             ]
         src += [
+            field.PauseUnits(THROWN_AFTER),
+            field.PlaySoundEffect(THROWN_SOUND),
             field.Pause(2),
             field.FadeOutScreen(),
             field.WaitForFade(),
