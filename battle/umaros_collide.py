@@ -52,6 +52,11 @@ class _UmarosCollide:
 
     def giant_umaro_mod(self, umaro, kefka):
         pixels, umaro_spec = self.small_sprite(umaro)
+
+        # umaro stands on a shadow, which has no place in the sky of the final battle
+        SHADOW_COLOR, SHADOW_ROWS = 1, 8
+        pixels = monster_sprite.without_shadow(pixels, SHADOW_COLOR, SHADOW_ROWS)
+
         mold, graphics = monster_sprite.sprite_data(monster_sprite.scale(pixels, SCALE))
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)
 

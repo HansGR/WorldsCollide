@@ -72,5 +72,16 @@ def sprite_data(pixels):
                 graphics += tile_data(tile)
     return mold, graphics
 
+def without_shadow(pixels, shadow_color, rows):
+    # a sprite's shadow is a patch of its outline color under its feet. in the last rows of the sprite,
+    # the pixels of that color which touch no other color are removed: what remains outlines the feet
+    height, width = len(pixels), len(pixels[0])
+    def outlines(x, y):
+        return any(pixels[ny][nx] not in (0, shadow_color)
+                   for ny in range(max(y - 1, 0), min(y + 2, height))
+                   for nx in range(max(x - 1, 0), min(x + 2, width)))
+    return [[0 if y >= height - rows and pixel == shadow_color and not outlines(x, y) else pixel
+             for x, pixel in enumerate(row)] for y, row in enumerate(pixels)]
+
 def scale(pixels, factor):
     return [[pixel for pixel in row for _ in range(factor)] for row in pixels for _ in range(factor)]

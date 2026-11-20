@@ -26,6 +26,24 @@ class TestMonsterSprite(unittest.TestCase):
         self.assertEqual(pixels[3][7], 0b101)
         self.assertEqual(sum(map(sum, pixels)), 0b101)
 
+    def test_without_shadow(self):
+        pixels = [list(map(int, row)) for row in (
+            "0011100",      # above the last rows: untouched
+            "0155510",
+            "0155510",
+            "1111111",      # the outline under the feet stays, its ends do not touch them
+            "0111110",
+        )]
+        expected = [list(map(int, row)) for row in (
+            "0011100",
+            "0155510",
+            "0155510",
+            "0111110",
+            "0000000",
+        )]
+        self.assertEqual(monster_sprite.without_shadow(pixels, 1, 2), expected)
+        self.assertEqual(monster_sprite.without_shadow(pixels, 1, 0), pixels)
+
     def test_three_bpp_tile_round_trip(self):
         rng = random.Random(3)
         pixels = [[rng.randrange(8) for _ in range(8)] for _ in range(8)]
