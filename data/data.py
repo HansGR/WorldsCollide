@@ -95,11 +95,14 @@ class Data:
     def umaros_collide_enrager(self):
         # UMAROS COLLIDE: revenger, which only final kefka has, is enrager: the bserk spell (as it is
         # in this seed) cast on the whole party, with revenger's animation. unlike bserk it can
-        # not be reflected or absorbed by runic
+        # not be reflected or absorbed by runic, and it misses more: bserk's hit rate is 150,
+        # which always hits a magic block below 44 (the chance is hit rate * (256 - 2 * magic
+        # block) / 256). with 75, 3 in 4 without magic block and half at 40
         from data.spell_names import name_id
         from data.ability_data import AbilityData
         ABILITY_DATA_START = 0x046ac0
         NOT_REFLECTABLE, RUNIC = 0x02, 0x08     # flags2
+        HIT_RATE = 75
 
         revenger = ABILITY_DATA_START + name_id["Revenger"] * AbilityData.DATA_SIZE
         revenger_targets = self.rom.get_bytes(revenger, 1)[0]      # all of the other side
@@ -108,6 +111,7 @@ class Data:
         enrager = AbilityData(name_id["Revenger"], enrager.ability_data())
         enrager.targets = revenger_targets
         enrager.flags2 = (enrager.flags2 | NOT_REFLECTABLE) & ~RUNIC
+        enrager.accuracy = HIT_RATE
         self.rom.set_bytes(revenger, enrager.ability_data())
 
     def write(self):
