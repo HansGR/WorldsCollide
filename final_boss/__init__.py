@@ -18,10 +18,15 @@ def _ultimaro():
     from final_boss.ultimaro import Ultimaro
     return Ultimaro
 
+def _uncle_ulty():
+    from final_boss.uncle_ulty import UncleUlty
+    return UncleUlty
+
 # name (the -fb value) : its class, imported when it is chosen
 _FINAL_BOSSES = {
     KEFKA       : _kefka,
     "ultimaro"  : _ultimaro,
+    "uncleulty" : _uncle_ulty,
 }
 NAMES = list(_FINAL_BOSSES)
 

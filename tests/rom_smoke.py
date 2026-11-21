@@ -25,6 +25,7 @@ EXTRA_FLAGS = [
     "-nfh -cg",
     "-nfh -sli -cg",
     "-fb ultimaro",
+    "-fb uncleulty",
     "-fb random",
 ]
 

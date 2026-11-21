@@ -73,15 +73,36 @@ def sprite_data(pixels):
     return mold, graphics
 
 def without_shadow(pixels, shadow_color, rows):
-    # a sprite's shadow is a patch of its outline color under its feet. in the last rows of the sprite,
-    # the pixels of that color which touch no other color are removed: what remains outlines the feet
+    # a sprite's shadow is a patch of its outline color under its feet. in these rows of the sprite (a
+    # range, or how many of its last rows), the pixels of that color which touch no other color are
+    # removed if they are open to the outside of the sprite: what remains outlines the feet, and the
+    # dark inside of the sprite stays
     height, width = len(pixels), len(pixels[0])
-    def outlines(x, y):
-        return any(pixels[ny][nx] not in (0, shadow_color)
-                   for ny in range(max(y - 1, 0), min(y + 2, height))
-                   for nx in range(max(x - 1, 0), min(x + 2, width)))
-    return [[0 if y >= height - rows and pixel == shadow_color and not outlines(x, y) else pixel
-             for x, pixel in enumerate(row)] for y, row in enumerate(pixels)]
+    if isinstance(rows, int):
+        rows = range(height - rows, height)
+
+    def is_shadow(x, y):
+        return y in rows and pixels[y][x] == shadow_color and not any(
+            pixels[ny][nx] not in (0, shadow_color)
+            for ny in range(max(y - 1, 0), min(y + 2, height))
+            for nx in range(max(x - 1, 0), min(x + 2, width)))
+    shadow = {(x, y) for y in rows for x in range(width) if is_shadow(x, y)}
+
+    def neighbors(x, y):
+        return ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+    def outside(x, y):
+        return not (0 <= x < width and 0 <= y < height) or not pixels[y][x]
+
+    # from the shadow's pixels at the edge of the sprite inward
+    removed = {pixel for pixel in shadow if any(outside(*neighbor) for neighbor in neighbors(*pixel))}
+    frontier = list(removed)
+    while frontier:
+        for neighbor in neighbors(*frontier.pop()):
+            if neighbor in shadow and neighbor not in removed:
+                removed.add(neighbor)
+                frontier.append(neighbor)
+
+    return [[0 if (x, y) in removed else pixel for x, pixel in enumerate(row)] for y, row in enumerate(pixels)]
 
 def scale(pixels, factor):
     return [[pixel for pixel in row for _ in range(factor)] for row in pixels for _ in range(factor)]

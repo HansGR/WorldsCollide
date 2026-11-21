@@ -14,6 +14,12 @@ GIANT_SPRITE_POINTER = 0x7fff       # a graphics pointer no monster has
 GIANT_SPRITE_SCALE = 2
 
 ABILITY_NAMES_START, FIRST_NAMED_ABILITY, ABILITY_NAME_SIZE = 0x26f7b9, 81, 10
+ABILITY_DATA_START = 0x046ac0
+
+# battle animation palettes (D2/6000, 8 colors each). the game's end at 0xef, and what follows up
+# to 0xf6 is other data: these are free
+PALETTES, PALETTE_SIZE = 0x126000, 16
+FREE_PALETTES = [0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf7]
 
 class FinalBoss:
     # final kefka as he is, and what the other final bosses are made from: each is called where the
@@ -26,6 +32,7 @@ class FinalBoss:
     def __init__(self):
         from data.bosses import name_enemy
         self.enemy_id = name_enemy[self.ENEMY]
+        self.free_palettes = list(FREE_PALETTES)
 
     def enemies_mod(self, enemies):
         # his stats and name (data/enemies.py, with the other enemies')
@@ -58,6 +65,177 @@ class FinalBoss:
             name_bytes = text.get_bytes(name, text.TEXT2)
             name_bytes += [0xff] * (ABILITY_NAME_SIZE - len(name_bytes))
             data.rom.set_bytes(ABILITY_NAMES_START + (name_id[ability] - FIRST_NAMED_ABILITY) * ABILITY_NAME_SIZE, name_bytes)
+
+    def goner_text_mod(self, data, text, room = False):
+        # what is said at the top of the screen before goner ("the end comes...beyond chaos."). the
+        # battle's one line texts share a fixed space: a longer text asks for room, and the four
+        # lines of vargas which the randomizer takes out of his script are emptied
+        import data.enemy_script_commands as ai_instr
+        GONER_TEXT = 140
+        VARGAS_TEXTS = [0x12, 0x43, 0x0a, 0x42]
+
+        data.dialogs.set_single_line_battle_text(GONER_TEXT, text)
+        if room:
+            for script in data.enemies.scripts.scripts:
+                if script.id == self.enemy_id:
+                    continue                # (the final boss may say them himself, with another text)
+                for said in VARGAS_TEXTS:
+                    assert ai_instr.Message(said) not in script.instructions, f"battle text {said} is in use"
+            for unsaid in VARGAS_TEXTS:
+                data.dialogs.set_single_line_battle_text(unsaid, "<end>")
+
+    def add_palette(self, colors):
+        # a battle animation palette of these 8 colors (15 bit), and its number
+        palette = self.free_palettes.pop(0)
+        address = PALETTES + palette * PALETTE_SIZE
+        space = Reserve(address, address + PALETTE_SIZE - 1, "final boss: battle animation palette")
+        space.write([color.to_bytes(2, "little") for color in colors])
+        return palette
+
+    def party_status_attack_mod(self, data, spell, hit_rate):
+        # revenger, which only final kefka has, becomes this spell (as it is in this seed) cast on the
+        # whole party, with revenger's animation. unlike the spell it can not be reflected or absorbed
+        # by runic, and it has this hit rate: the chance to hit is hit rate * (256 - 2 * magic block)
+        # / 256, so 150 always hits a magic block below 44, and 75 hits 3 in 4 without magic block
+        from data.spell_names import name_id
+        from data.ability_data import AbilityData
+        NOT_REFLECTABLE, RUNIC = 0x02, 0x08     # flags2
+
+        revenger = ABILITY_DATA_START + name_id["Revenger"] * AbilityData.DATA_SIZE
+        revenger_targets = data.rom.get_bytes(revenger, 1)[0]       # all of the other side
+
+        attack = AbilityData(name_id["Revenger"], data.spells.spells[name_id[spell]].ability_data())
+        attack.targets = revenger_targets
+        attack.flags2 = (attack.flags2 | NOT_REFLECTABLE) & ~RUNIC
+        attack.accuracy = hit_rate
+        data.rom.set_bytes(revenger, attack.ability_data())
+
+    def special_attack_animation_mod(self, attack):
+        # his special attack (havoc wing) looks and sounds like this attack, one the lore command
+        # animates (0x8b and up: the enemies' own), and is otherwise what it was: when the battle
+        # queues the animation of his special, it queues that of the attack in its place
+        # x = the attacker (8 and up are the enemies). 8 bit a, x and y
+        QUEUE_ANIMATION_START, QUEUE_ANIMATION_END = 0x23414, 0x23416
+        QUEUE_ANIMATION = 0x35ad
+        SPECIAL_MESSAGE = 0x06
+        LORE_COMMAND = 0x0c
+
+        message = 0x3412            # what is named at the top of the screen
+        command, command_attack = 0xb5, 0xb6
+        enemy_ids = 0x33a8
+        first_enemy = 8
+
+        src = [
+            asm.LDA(message, asm.ABS),
+            asm.CMP(SPECIAL_MESSAGE, asm.IMM8),
+            asm.BNE("AS_IT_IS"),
+            asm.CPX(first_enemy, asm.IMM8),
+            asm.BLT("AS_IT_IS"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_X),
+            asm.CMP(self.enemy_id, asm.IMM16),
+            asm.A8(),                               # (keeps the zero flag)
+            asm.BNE("AS_IT_IS"),
+
+            asm.LDA(command, asm.DIR),
+            asm.PHA(),
+            asm.LDA(command_attack, asm.DIR),
+            asm.PHA(),
+            asm.LDA(LORE_COMMAND, asm.IMM8),
+            asm.STA(command, asm.DIR),
+            asm.LDA(attack, asm.IMM8),
+            asm.STA(command_attack, asm.DIR),
+            asm.JSR(QUEUE_ANIMATION, asm.ABS),
+            asm.PLA(),
+            asm.STA(command_attack, asm.DIR),
+            asm.PLA(),
+            asm.STA(command, asm.DIR),
+            asm.RTS(),
+
+            "AS_IT_IS",
+            asm.JMP(QUEUE_ANIMATION, asm.ABS),
+        ]
+        space = Write(Bank.C2, src, "final boss: special attack animation")
+        queue_animation = space.start_address
+
+        space = Reserve(QUEUE_ANIMATION_START, QUEUE_ANIMATION_END, "queue attack animation", asm.NOP())
+        space.write(
+            asm.JSR(queue_animation, asm.ABS),
+        )
+
+    def goner_sprite_mod(self, pixels, palette):
+        # before goner final kefka's laughing head appears in front of him and fades away: battle
+        # animation 399. it becomes this picture: 32 rows of 32 palette indices (0 is transparent)
+        # of which at most 14 of the 16 8x8 tiles have pixels, and its 8 colors (the first is unused).
+        # the picture is seen as it is given
+        #
+        # an attack animation (D0/7FB2, 14 bytes) names an animation for each of 3 layers and their
+        # palettes (D2/6000, 8 colors each). a layer's animation (D4/D000, 6 bytes) has its number
+        # of frames, its tile layout, its first frame and its size. a tile layout is a part of
+        # D2/0000: rows of 16 8x8 tiles, 2 bytes each (the tile in the 3bpp graphics at D3/0000,
+        # bit 14: flipped left to right, bit 15: upside down), starting 0x40 bytes later with each
+        # layout. a frame (D4/DF3C has their pointers, they are in bank D1) lists 16x16 tiles of
+        # the layout: where it goes (x, y: a nibble each) and which one (8 to a row, bit 6: flipped
+        # left to right)
+        #
+        # the head is 4 16x16 tiles, flipped. their 14 8x8 tiles (2 are the empty tile) are used by
+        # nothing else, and neither is that part of the layout
+        ATTACK_ANIMATIONS, ATTACK_ANIMATION_SIZE = 0x107fb2, 14
+        LAYER_ANIMATIONS, LAYER_ANIMATION_SIZE = 0x14d000, 6
+        FRAME_POINTERS, FRAMES = 0x14df3c, 0x110000
+        TILE_LAYOUTS, TILE_LAYOUT_STEP = 0x120000, 0x40
+        GRAPHICS = 0x130000
+
+        LAUGHING_HEAD = 399
+        BG1_LAYER = 1
+        EMPTY_TILE = 0x0015
+        LAYOUT_ROW_TILES = 16               # 8x8 tiles in a row of a tile layout
+        FLIPPED = 0x40
+        HEAD_FRAME = [0x73, 0x11 | FLIPPED, 0x83, 0x10 | FLIPPED, 0x74, 0x19 | FLIPPED, 0x84, 0x18 | FLIPPED]
+
+        def word(address):
+            return int.from_bytes(bytes(Read(address, address + 1)), "little")
+
+        attack_animation = ATTACK_ANIMATIONS + LAUGHING_HEAD * ATTACK_ANIMATION_SIZE
+        layer_animation = LAYER_ANIMATIONS + word(attack_animation + BG1_LAYER * 2) * LAYER_ANIMATION_SIZE
+        frames, tile_layout = Read(layer_animation, layer_animation + 1)
+        tile_layout = TILE_LAYOUTS + ((frames & 0x40) << 2 | tile_layout) * TILE_LAYOUT_STEP
+
+        frame = word(layer_animation + 2)
+        frame_start, frame_end = word(FRAME_POINTERS + frame * 2), word(FRAME_POINTERS + frame * 2 + 2)
+        assert frames & 0x3f == 1 and Read(FRAMES + frame_start, FRAMES + frame_end - 1) == HEAD_FRAME
+
+        # the 8x8 tiles of the frame's 16x16 tiles 0x10, 0x11, 0x18 and 0x19: 4 rows of 4
+        TILES = len(pixels) // monster_sprite.TILE_PIXELS
+        first_row, first_column = 2 * (0x10 // 8), 2 * (0x10 % 8)
+        layout_rows = [tile_layout + ((first_row + row) * LAYOUT_ROW_TILES + first_column) * 2 for row in range(TILES)]
+        own_tiles = [word(layout_row + column * 2) for layout_row in layout_rows for column in range(TILES)]
+        own_tiles = [tile for tile in own_tiles if tile != EMPTY_TILE]
+
+        # (the frame flips its tiles, and an animation is flipped again when a monster is the
+        # attacker: the picture is seen as it is stored)
+        for row, layout_row in enumerate(layout_rows):
+            layout = []
+            for column in range(TILES):
+                tile = [pixels[row * monster_sprite.TILE_PIXELS + y][column * monster_sprite.TILE_PIXELS:][:monster_sprite.TILE_PIXELS]
+                        for y in range(monster_sprite.TILE_PIXELS)]
+                if not any(map(any, tile)):
+                    layout += EMPTY_TILE.to_bytes(2, "little")
+                    continue
+
+                own_tile = own_tiles.pop(0)     # (the picture has no more tiles than the head had)
+                layout += own_tile.to_bytes(2, "little")
+
+                tile_address = GRAPHICS + own_tile * monster_sprite.TILE_SIZE_3BPP
+                space = Reserve(tile_address, tile_address + monster_sprite.TILE_SIZE_3BPP - 1, "final boss: goner sprite graphics")
+                space.write(monster_sprite.tile_data(tile, three_bpp = True))
+
+            space = Reserve(layout_row, layout_row + len(layout) - 1, "final boss: goner sprite tile layout")
+            space.write(layout)
+
+        BG1_PALETTE = attack_animation + 6 + BG1_LAYER
+        space = Reserve(BG1_PALETTE, BG1_PALETTE, "laughing head palette")
+        space.write(self.add_palette(palette))
 
     def _spec_address(self, enemy):
         return GRAPHICS_SPECS + enemy * GRAPHICS_SPEC_SIZE

@@ -27,6 +27,7 @@ class Ultimaro(FinalBoss):
         "Revenger"      : "Enrager",
     }
     GONER_TEXT = "Yeti used a Green Cherry!<wait 60 frames><end>"
+    ENRAGER_HIT_RATE = 75       # half of bserk's
 
     def enemies_mod(self, enemies):
         ultimaro = self.enemy(enemies)
@@ -64,32 +65,9 @@ class Ultimaro(FinalBoss):
 
     def data_mod(self, data):
         self.rename_abilities(data, self.ABILITY_NAMES)
-        self.enrager_mod(data)
+        self.party_status_attack_mod(data, "Bserk", self.ENRAGER_HIT_RATE)
 
-        goner_dialog = 140      # "the end comes...beyond chaos."
-        data.dialogs.set_single_line_battle_text(goner_dialog, self.GONER_TEXT)
-
-    def enrager_mod(self, data):
-        # revenger, which only final kefka has, is enrager: the bserk spell (as it is in this seed)
-        # cast on the whole party, with revenger's animation. unlike bserk it can not be reflected or
-        # absorbed by runic, and it misses more: bserk's hit rate is 150, which always hits a magic
-        # block below 44 (the chance is hit rate * (256 - 2 * magic block) / 256). with 75, 3 in 4
-        # without magic block and half at 40
-        from data.spell_names import name_id
-        from data.ability_data import AbilityData
-        ABILITY_DATA_START = 0x046ac0
-        NOT_REFLECTABLE, RUNIC = 0x02, 0x08     # flags2
-        HIT_RATE = 75
-
-        revenger = ABILITY_DATA_START + name_id["Revenger"] * AbilityData.DATA_SIZE
-        revenger_targets = data.rom.get_bytes(revenger, 1)[0]       # all of the other side
-
-        enrager = data.spells.spells[name_id["Bserk"]]
-        enrager = AbilityData(name_id["Revenger"], enrager.ability_data())
-        enrager.targets = revenger_targets
-        enrager.flags2 = (enrager.flags2 | NOT_REFLECTABLE) & ~RUNIC
-        enrager.accuracy = HIT_RATE
-        data.rom.set_bytes(revenger, enrager.ability_data())
+        self.goner_text_mod(data, self.GONER_TEXT)
 
     def battle_mod(self):
         from data.bosses import name_enemy
@@ -99,7 +77,7 @@ class Ultimaro(FinalBoss):
         self.special_attack_mod(umaro)
         self.jump_mod()
         self.jump_animation_mod()
-        self.green_cherry_mod()
+        self.goner_sprite_mod(green_cherry.pixels(), green_cherry.palette())     # he eats a green cherry
 
     def special_attack_mod(self, umaro):
         # ultimaro's special attack (yeti punch: final kefka's havoc wing, and still that
@@ -200,81 +178,3 @@ class Ultimaro(FinalBoss):
             (landing_script & 0xffff).to_bytes(2, "little"),
         )
 
-    def green_cherry_mod(self):
-        # before goner (u'ghaaaa, after "Yeti used a Green Cherry!") final kefka's laughing head
-        # appears in front of him and fades away: battle animation 399. it becomes the green cherry
-        #
-        # an attack animation (D0/7FB2, 14 bytes) names an animation for each of 3 layers and their
-        # palettes (D2/6000, 8 colors each). a layer's animation (D4/D000, 6 bytes) has its number
-        # of frames, its tile layout, its first frame and its size. a tile layout is a part of
-        # D2/0000: rows of 16 8x8 tiles, 2 bytes each (the tile in the 3bpp graphics at D3/0000,
-        # bit 14: flipped left to right, bit 15: upside down), starting 0x40 bytes later with each
-        # layout. a frame (D4/DF3C has their pointers, they are in bank D1) lists 16x16 tiles of
-        # the layout: where it goes (x, y: a nibble each) and which one (8 to a row, bit 6: flipped
-        # left to right)
-        #
-        # the head is 4 16x16 tiles, flipped. their 14 8x8 tiles (2 are the empty tile) are used by
-        # nothing else, and neither is that part of the layout
-        ATTACK_ANIMATIONS, ATTACK_ANIMATION_SIZE = 0x107fb2, 14
-        LAYER_ANIMATIONS, LAYER_ANIMATION_SIZE = 0x14d000, 6
-        FRAME_POINTERS, FRAMES = 0x14df3c, 0x110000
-        TILE_LAYOUTS, TILE_LAYOUT_STEP = 0x120000, 0x40
-        GRAPHICS = 0x130000
-        PALETTES, PALETTE_SIZE = 0x126000, 16
-
-        LAUGHING_HEAD = 399
-        BG1_LAYER = 1
-        EMPTY_TILE = 0x0015
-        LAYOUT_ROW_TILES = 16               # 8x8 tiles in a row of a tile layout
-        FLIPPED = 0x40
-        HEAD_FRAME = [0x73, 0x11 | FLIPPED, 0x83, 0x10 | FLIPPED, 0x74, 0x19 | FLIPPED, 0x84, 0x18 | FLIPPED]
-        CHERRY_PALETTE = 0xfe               # after the game's palettes, where nothing is
-
-        def word(address):
-            return int.from_bytes(bytes(Read(address, address + 1)), "little")
-
-        attack_animation = ATTACK_ANIMATIONS + LAUGHING_HEAD * ATTACK_ANIMATION_SIZE
-        layer_animation = LAYER_ANIMATIONS + word(attack_animation + BG1_LAYER * 2) * LAYER_ANIMATION_SIZE
-        frames, tile_layout = Read(layer_animation, layer_animation + 1)
-        tile_layout = TILE_LAYOUTS + ((frames & 0x40) << 2 | tile_layout) * TILE_LAYOUT_STEP
-
-        frame = word(layer_animation + 2)
-        frame_start, frame_end = word(FRAME_POINTERS + frame * 2), word(FRAME_POINTERS + frame * 2 + 2)
-        assert frames & 0x3f == 1 and Read(FRAMES + frame_start, FRAMES + frame_end - 1) == HEAD_FRAME
-
-        # the 8x8 tiles of the frame's 16x16 tiles 0x10, 0x11, 0x18 and 0x19: 4 rows of 4
-        TILES = green_cherry.SIZE // monster_sprite.TILE_PIXELS
-        first_row, first_column = 2 * (0x10 // 8), 2 * (0x10 % 8)
-        layout_rows = [tile_layout + ((first_row + row) * LAYOUT_ROW_TILES + first_column) * 2 for row in range(TILES)]
-        own_tiles = [word(layout_row + column * 2) for layout_row in layout_rows for column in range(TILES)]
-        own_tiles = [tile for tile in own_tiles if tile != EMPTY_TILE]
-
-        # the frame flips its tiles, and an animation is flipped again when a monster is the
-        # attacker: the cherry is seen as it is stored
-        pixels = green_cherry.pixels()
-        for row, layout_row in enumerate(layout_rows):
-            layout = []
-            for column in range(TILES):
-                tile = [pixels[row * monster_sprite.TILE_PIXELS + y][column * monster_sprite.TILE_PIXELS:][:monster_sprite.TILE_PIXELS]
-                        for y in range(monster_sprite.TILE_PIXELS)]
-                if not any(map(any, tile)):
-                    layout += EMPTY_TILE.to_bytes(2, "little")
-                    continue
-
-                own_tile = own_tiles.pop(0)     # (the cherry has no more tiles than the head had)
-                layout += own_tile.to_bytes(2, "little")
-
-                tile_address = GRAPHICS + own_tile * monster_sprite.TILE_SIZE_3BPP
-                space = Reserve(tile_address, tile_address + monster_sprite.TILE_SIZE_3BPP - 1, "green cherry graphics")
-                space.write(monster_sprite.tile_data(tile, three_bpp = True))
-
-            space = Reserve(layout_row, layout_row + len(layout) - 1, "green cherry tile layout")
-            space.write(layout)
-
-        palette_address = PALETTES + CHERRY_PALETTE * PALETTE_SIZE
-        space = Reserve(palette_address, palette_address + PALETTE_SIZE - 1, "green cherry palette")
-        space.write([color.to_bytes(2, "little") for color in green_cherry.palette()])
-
-        BG1_PALETTE = attack_animation + 6 + BG1_LAYER
-        space = Reserve(BG1_PALETTE, BG1_PALETTE, "laughing head palette")
-        space.write(CHERRY_PALETTE)

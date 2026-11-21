@@ -51,21 +51,36 @@ class TestMonsterSprite(unittest.TestCase):
         self.assertEqual(len(data), monster_sprite.TILE_SIZE_3BPP)
         self.assertEqual(monster_sprite.tile_pixels(data, three_bpp = True), pixels)
 
-    def test_green_cherry(self):
+    def test_goner_sprites(self):
+        # the pictures the final bosses show before goner
         import graphics.green_cherry as green_cherry
-        pixels = green_cherry.pixels()
-        self.assertEqual(len(pixels), green_cherry.SIZE)
-        self.assertTrue(all(len(row) == green_cherry.SIZE for row in pixels))
-        self.assertTrue(all(0 <= pixel <= len(green_cherry.PALETTE) for row in pixels for pixel in row))
+        import graphics.shrimp as shrimp
+        for art in (green_cherry, shrimp):
+            with self.subTest(art = art.__name__):
+                pixels = art.pixels()
+                self.assertEqual(len(pixels), art.SIZE)
+                self.assertTrue(all(len(row) == art.SIZE for row in pixels))
+                self.assertTrue(all(0 <= pixel <= len(art.PALETTE) for row in pixels for pixel in row))
 
-        palette = green_cherry.palette()
-        self.assertEqual(len(palette), 8)
-        self.assertTrue(all(0 <= color < 0x8000 for color in palette))
+                palette = art.palette()
+                self.assertEqual(len(palette), 8)
+                self.assertTrue(all(0 <= color < 0x8000 for color in palette))
 
-        # the animation it replaces has 14 tiles of its own
-        tiles = sum(any(pixels[row + y][column + x] for y in range(8) for x in range(8))
-                    for row in range(0, green_cherry.SIZE, 8) for column in range(0, green_cherry.SIZE, 8))
-        self.assertLessEqual(tiles, 14)
+                # the animation it replaces has 14 tiles of its own
+                tiles = sum(any(pixels[row + y][column + x] for y in range(8) for x in range(8))
+                            for row in range(0, art.SIZE, 8) for column in range(0, art.SIZE, 8))
+                self.assertLessEqual(tiles, 14)
+
+    def test_without_shadow_keeps_the_inside(self):
+        # a dark patch closed in by the sprite is not its shadow
+        pixels = [list(map(int, row)) for row in (
+            "5555555",
+            "5111115",
+            "5111115",
+            "5111115",
+            "5555555",
+        )]
+        self.assertEqual(monster_sprite.without_shadow(pixels, 1, range(len(pixels))), pixels)
 
     def test_sprite_round_trip(self):
         rng = random.Random(2)
