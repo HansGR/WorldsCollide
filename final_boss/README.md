@@ -31,7 +31,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 - Havoc Wing is Tentacle: the same attack, with the looks and sound of the Tentacle attack.
 - HyperDrive is Ink Blast: its palettes in ink, and it blinds.
 - Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds everyone it hits. It may also muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
-- Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 125, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
+- Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 110, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
 
 ## How a final boss is made
 
@@ -50,7 +50,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 
 - `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy at twice its size, in that enemy's palette. The enemy needs a small mold (a sprite of up to 64x64 pixels) and 4bpp graphics. A shadow under its feet can be removed.
 - `rename_abilities(data, {name: new name})` renames attacks in the box at the top of the screen.
-- `lower_mod(enemies, pixels)` puts him lower on the screen than Kefka, for a sprite less high than his.
+- `giant_sprite_mod(..., lower = pixels)` puts a sprite less high than the mold lower in it, to be clear of the boxes at the top of the screen. His place in the formation is Kefka's, so the death animation is too.
 - `goner_sprite_mod(pixels, palette)` shows a 32x32 picture where Kefka's laughing head appears before Goner.
 - `goner_text_mod(data, text)` is what is said before Goner. A line holds some 32 letters.
 - `special_attack_animation_mod(attack)` gives his special attack (Havoc Wing) the looks and sound of another attack.

@@ -57,19 +57,28 @@ def sprite_pixels(mold, tiles, graphics, three_bpp = False):
                 pixels[row * TILE_PIXELS + y][column * TILE_PIXELS : (column + 1) * TILE_PIXELS] = tile[y]
     return pixels
 
-def sprite_data(pixels):
-    # the mold and 4bpp graphics of a sprite (a square of 8 or 16 tiles a side), without its empty tiles
+def sprite_data(pixels, no_empty_rows = False):
+    # the mold and 4bpp graphics of a sprite (a square of 8 or 16 tiles a side), without its empty tiles.
+    # the battle takes the height of a monster to be the rows of its mold before the first empty one:
+    # no_empty_rows keeps an empty tile in each row of tiles that has none, down to the sprite's last
     tiles = len(pixels) // TILE_PIXELS
     mold = [0] * mold_size(tiles)
     graphics = []
+
+    def tile_at(row, column):
+        return [pixels[row * TILE_PIXELS + y][column * TILE_PIXELS : (column + 1) * TILE_PIXELS]
+                for y in range(TILE_PIXELS)]
+    def used(row, column):
+        return any(any(tile_row) for tile_row in tile_at(row, column))
+    used_rows = [row for row in range(tiles) if any(used(row, column) for column in range(tiles))]
+
     for row in range(tiles):
+        kept_empty = no_empty_rows and used_rows and row < used_rows[-1] and row not in used_rows
         for column in range(tiles):
-            tile = [pixels[row * TILE_PIXELS + y][column * TILE_PIXELS : (column + 1) * TILE_PIXELS]
-                    for y in range(TILE_PIXELS)]
-            if any(any(tile_row) for tile_row in tile):
+            if used(row, column) or (kept_empty and column == 0):
                 bit = row * tiles + column
                 mold[bit // 8] |= 0x80 >> (bit % 8)
-                graphics += tile_data(tile)
+                graphics += tile_data(tile_at(row, column))
     return mold, graphics
 
 def without_shadow(pixels, shadow_color, rows):

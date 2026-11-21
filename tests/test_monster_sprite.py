@@ -94,6 +94,23 @@ class TestMonsterSprite(unittest.TestCase):
         self.assertEqual(len(graphics), 9 * monster_sprite.TILE_SIZE_4BPP)
         self.assertEqual(monster_sprite.sprite_pixels(mold, monster_sprite.SMALL_MOLD_TILES, graphics), pixels)
 
+    def test_no_empty_rows(self):
+        # the battle takes a monster's height to be its mold's rows before the first empty one: a
+        # sprite low in its mold has an empty tile in each row above it, and none below it
+        tiles = monster_sprite.LARGE_MOLD_TILES
+        size = tiles * monster_sprite.TILE_PIXELS
+        pixels = [[0] * size for _ in range(size)]
+        for y in range(40, 100):
+            pixels[y][20:60] = [3] * 40
+
+        mold, graphics = monster_sprite.sprite_data(pixels, no_empty_rows = True)
+        rows = [int.from_bytes(mold[row * 2 : row * 2 + 2], "big") for row in range(tiles)]
+        self.assertEqual([bool(row) for row in rows], [True] * 13 + [False] * 3)
+        self.assertEqual(rows[:5], [0x8000] * 5)
+        self.assertEqual(monster_sprite.sprite_data(pixels)[0][:10], [0] * 10)
+        used = sum(bin(row).count("1") for row in rows)
+        self.assertEqual(len(graphics), used * monster_sprite.TILE_SIZE_4BPP)
+
     def test_scaled_sprite_is_a_large_sprite(self):
         size = monster_sprite.SMALL_MOLD_TILES * monster_sprite.TILE_PIXELS
         pixels = [[0] * size for _ in range(size)]

@@ -31,7 +31,7 @@ class UncleUlty(FinalBoss):
     GONER_TEXT = "Gwee-hee-hee...<wait 60 frames><end>"
     GONER_TEXT_2 = "It's my special recipe!<wait 60 frames><end>"   # (a line holds some 32 letters)
     SECOND_TEXT = 0x12                      # a line of vargas which goner_text_mod empties
-    IMP_SONATA_HIT_RATE = 125
+    IMP_SONATA_HIT_RATE = 110
 
     WATER = 0x80                            # element
     DARK = 0x01                             # status (first byte): blind
@@ -44,7 +44,6 @@ class UncleUlty(FinalBoss):
         ulty.special_name = "Tentacle"              # was Havoc Wing
         ulty.hp = min(round(ulty.hp * self.HP), 2 ** 16 - 1)
         ulty.absorb_elements |= self.WATER
-        self.lower_mod(enemies, self.LOWER)
 
     def scripts_mod(self, scripts):
         import data.enemy_script_commands as ai_instr
@@ -92,7 +91,7 @@ class UncleUlty(FinalBoss):
         from data.bosses import name_enemy
         from data.spell_names import name_id
 
-        self.giant_sprite_mod(name_enemy[self.ULTROS], self.SHADOW_COLOR, self.SHADOW_ROWS)
+        self.giant_sprite_mod(name_enemy[self.ULTROS], self.SHADOW_COLOR, self.SHADOW_ROWS, self.LOWER)
         self.special_attack_animation_mod(name_id["Tentacle"])
         self.goner_sprite_mod(shrimp.pixels(), shrimp.palette())
         self.ink_blast_mod(name_id["HyperDrive"])

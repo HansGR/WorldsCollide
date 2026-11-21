@@ -55,17 +55,6 @@ class FinalBoss:
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
 
-    def lower_mod(self, enemies, pixels):
-        # he is this much lower on the screen than final kefka (who is 16 pixels from its top), in
-        # steps of 8 pixels: for a sprite that is not as high, to be clear of the boxes at the top.
-        # (leaving the top of his mold empty instead hangs the battle as he appears)
-        FINAL_FORMATION = 0x202             # the last tier of the final battle, he is its first enemy
-        POSITION_PIXELS = 8
-
-        formation = enemies.formations.formations[FINAL_FORMATION]
-        assert formation.enemy_ids[0] == self.enemy_id
-        formation.enemy_y_positions[0] += pixels // POSITION_PIXELS
-
     def rename_abilities(self, data, names):
         # the attacks named in the box at the top of the screen, {name : new name}. -steveify names them all
         import data.text as text
@@ -319,7 +308,7 @@ class FinalBoss:
 
         return monster_sprite.sprite_pixels(mold, tiles, graphics), spec
 
-    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0):
+    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0):
         # the final boss looks like this enemy (one with a small mold: up to 64x64 pixels), at twice its
         # size and in its palette. a shadow under its feet (its color, and how many of the sprite's last
         # rows it is in) is removed: the final boss is in the air
@@ -331,7 +320,16 @@ class FinalBoss:
         pixels, enemy_spec = self.small_sprite(enemy)
         if shadow_rows:
             pixels = monster_sprite.without_shadow(pixels, shadow_color, shadow_rows)
-        mold, graphics = monster_sprite.sprite_data(monster_sprite.scale(pixels, GIANT_SPRITE_SCALE))
+        #
+        # a sprite that is not as high as the mold can be this many pixels lower in it, to be clear of
+        # the boxes at the top of the screen (it is at the top of the mold otherwise, as all monsters'
+        # are). the battle takes a monster's height to be its mold's rows before the first empty one,
+        # and hangs on a mold with an empty first row: the rows above the sprite get an empty tile
+        pixels = monster_sprite.scale(pixels, GIANT_SPRITE_SCALE)
+        if lower:
+            assert not any(any(row) for row in pixels[-lower:]), "the sprite is too high to be lower"
+            pixels = [[0] * len(pixels[0]) for _ in range(lower)] + pixels[:-lower]
+        mold, graphics = monster_sprite.sprite_data(pixels, no_empty_rows = True)
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)
 
         space = Write(Bank.F0, graphics, "final boss graphics")
