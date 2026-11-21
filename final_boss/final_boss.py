@@ -298,6 +298,7 @@ class FinalBoss:
             formation.enemy_x_positions[slot], formation.enemy_y_positions[slot] = x, y
 
     def helpers_layout_mod(self, boss_tiles, helper_tiles, helpers = 2):
+        # (after giant_sprite_mod: the boss has no sprites where his sprite is empty)
         # a formation's monsters share 16x16 tiles of graphics (128x128 pixels), which its mold divides
         # between them: each has a rectangle of the 16x16 (where it is, (row * 16 + column) * 0x20,
         # and its width and height in tiles). the final formation's mold gives its one monster all
@@ -380,6 +381,9 @@ class FinalBoss:
                     large = sprite_row < large_height and sprite_column < large_width
                     if large and (sprite_row % SPRITE_TILES or sprite_column % SPRITE_TILES):
                         continue
+                    size = SPRITE_TILES if large else SMALL_TILES
+                    if (row, column) == (0, 0) and sprites and not self._any_pixels(sprite_row, sprite_column, size):
+                        continue                # the boss: nothing of him is here
                     tile = (row + sprite_row) * TILES + column + sprite_column
                     sprites.append(len(pieces) // PIECE_SIZE)
                     sizes.append(0 if large else 1)
@@ -407,6 +411,11 @@ class FinalBoss:
             assert Read(user - 1, user + 2) == [0xbf] + list((SPRITES + offset + 0xc00000).to_bytes(3, "little"))
             Reserve(user, user + 2, "mold sprites address").write(
                 list((table_space.start_address_snes + offset).to_bytes(3, "little")))
+
+    def _any_pixels(self, row, column, size):
+        # whether the giant sprite has anything in the size x size tiles from this row and column
+        pixels = self.giant_sprite_pixels
+        return any(any(pixels_row[column * 8 : (column + size) * 8]) for pixels_row in pixels[row * 8 : (row + size) * 8])
 
     def _small_sprites_mod(self, small):
         # where a monster's sprite is given its size bit (and the high bit of its x), in the two
@@ -769,6 +778,7 @@ class FinalBoss:
         if lower:
             assert not any(any(row) for row in pixels[-lower:]), "the sprite is too high to be lower"
             pixels = [[0] * len(pixels[0]) for _ in range(lower)] + pixels[:-lower]
+        self.giant_sprite_pixels = pixels
         mold, graphics = monster_sprite.sprite_data(pixels, no_empty_rows = True)
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)
 

@@ -18,6 +18,7 @@ class Grampaluma(FinalBoss):
     HELPER_LOOKS = "Iron Fist"
     HELPER_NAME = "ChromeFist"
     HELPER_HP = 14000
+    HELPER_LEVEL, HELPER_VIGOR, HELPER_EVADE = 40, 14, 60       # the scrapper's are 34, 10 and 120
 
     SPECIAL_NAME = "Tiger Claw"             # was havoc wing
     ABILITY_NAMES = {
@@ -33,13 +34,15 @@ class Grampaluma(FinalBoss):
     SEIZURE_BYTE, SEIZURE = 11, 0x40        # in an attack's data: the second status byte (sap)
     HASTE_BYTE, HASTE = 2, 0x08             # the third status byte
 
-    # dadaluma is 88x56 pixels. the monsters of the formation share 16x16 tiles of graphics: he has
-    # the top 16x10 (125x80 pixels: 1.43 times his size), and the chromefists 6x6 each under him
-    TILES = (16, 10)
+    # dadaluma is 88x56 pixels, and he 107x68: 1.21 times that (the most that fit the 128 pixels
+    # of a formation's graphics is 1.43 times). the monsters of the formation share 16x16 tiles of
+    # graphics: he has the top 14x10, and the chromefists 6x6 each under him
+    HEIGHT = 68
+    TILES = (14, 10)
     HELPER_TILES = (6, 6)
 
     # on the screen, (x, y) in steps of 8 pixels: he is clear of the boxes at the top
-    POSITION = (0, 7)
+    POSITION = (2, 8)
     HELPER_POSITIONS = [(15, 5), (15, 12)]
 
     CALL_TIME = 30                          # he calls them when they are gone and his timer is above this
@@ -50,7 +53,6 @@ class Grampaluma(FinalBoss):
     # script variables: 0 and 0x24 are final kefka's. below 0x24 they are the battle's, from it each monster's own
     FLAGS, HEALED, THROWN = 0x01, 0, 1      # a variable and two of its bits
     HIT_COUNT = 0x03
-    COIN = 0x24                             # the chromefists'
 
     SELF, RANDOM_CHARACTER = 0x36, 0x44     # targets
     USE, THROW = 0x00, 0x01
@@ -67,6 +69,9 @@ class Grampaluma(FinalBoss):
         self.iron_fist_id = enemies.get_enemy(self.HELPER_LOOKS)
         helper = self.helper_enemy_mod(enemies, enemies.get_enemy(self.HELPER), self.HELPER_NAME)
         helper.hp = self.HELPER_HP
+        helper.level = self.HELPER_LEVEL
+        helper.vigor = self.HELPER_VIGOR
+        helper.evasion = self.HELPER_EVADE
         helper.status_immunities.haste = 0
         helper.status_immunities.slow = 0
         self.helpers_mod(enemies, HELPER_ENEMY, self.HELPER_POSITIONS, self.POSITION)
@@ -80,32 +85,34 @@ class Grampaluma(FinalBoss):
         ADD = ai_instr.Arithmetic.ADD
         battle = ai_instr.Spell(name_id["Battle"])
 
-        # the chromefists: a dirk or two attacks, by the coin they threw the turn before (a condition
-        # is tested as the script is read, and what sets a variable when the turn is taken)
+        # a script is blocks which end with EndIf or the end of the script: each turn, from the top,
+        # the first block whose conditions are all true is what the monster does, and the turn ends
+        # with the block (or at an EndTurn in it, after which the block goes on the turn it is
+        # reached again). a block with no condition is always true.
+
+        # the chromefists: a dirk, or else two attacks
         scripts.scripts[HELPER_ENEMY].instructions = [
-            ai_instr.If(0x0d, self.COIN, 1),            # if the coin is 1 or more
+            ai_instr.If(CHANCE, 128, 0x00),
+            ai_instr.SetTarget(self.RANDOM_CHARACTER),
             ai_instr.RandomItem(self.THROW, item_id["Dirk"], item_id["Dirk"]),
             ai_instr.EndIf(),
-            ai_instr.If(0x0c, self.COIN, 1),            # if it is less
             battle,
             battle,
-            ai_instr.EndIf(),
-            ai_instr.Arithmetic(self.COIN, 0),
-            ai_instr.If(CHANCE, 128, 0x00),
-            ai_instr.Arithmetic(self.COIN, 1),
             ai_instr.EndMainLoop(),
             ai_instr.EndScript(),
         ]
 
-        # what dadaluma does, before some of the turns of final kefka's script that are not in a
-        # condition (his script goes around once in 7 turns or more, and there is not the room in
-        # the scripts for all of it before each): the call before every other, the rest before
-        # every fourth
+        # what dadaluma does: blocks before final kefka's, after his entrance, tested every turn. a
+        # block which ends a turn also has final kefka's script start over (with fallen one), so
+        # each of these ends with a condition that is never true: what is before it is done, and the
+        # turn goes on with final kefka's script where it was
+        never = ai_instr.If(CHANCE, 0, 0x00)
         call = [
             ai_instr.If(0x0b, self.CALL_TIME, 0x00),    # if his timer is above this
             ai_instr.Misc(0x00, 0x00),                  # reset his timer
             ai_instr.If(0x12, HELPERS, 0x00),           # if the helpers are dead or not in the battle
             ai_instr.ChangeEnemies(self.CALL_ANIMATION, 0x00, HELPERS),     # bring them in
+            never,
             ai_instr.EndIf(),
         ]
         heal_and_throw = [
@@ -117,6 +124,7 @@ class Grampaluma(FinalBoss):
             ai_instr.RandomItem(self.USE, item_id["X-Potion"], item_id["Potion"]),
             ai_instr.Spell(name_id["Safe"]),
             ai_instr.Bits(SET, self.FLAGS, self.HEALED),
+            never,
             ai_instr.EndIf(),
 
             ai_instr.If(0x0d, self.HIT_COUNT, self.HITS),   # if he has been hit this many times
@@ -124,6 +132,7 @@ class Grampaluma(FinalBoss):
             ai_instr.SetTarget(self.RANDOM_CHARACTER),
             ai_instr.RandomItem(self.THROW, item_id["Wing Edge"], item_id["Wing Edge"]),
             ai_instr.Bits(SET, self.FLAGS, self.THROWN),
+            never,
             ai_instr.EndIf(),
         ]
 
@@ -160,29 +169,16 @@ class Grampaluma(FinalBoss):
         head = ai_instr.Animate(0x0a, 0x01, 0x00)
         script.remove(head, count = 2)
 
-        main_end = instructions.index(ai_instr.EndMainLoop())
 
-        turns, in_condition = [], False
-        for index, instruction in enumerate(instructions[:main_end]):
-            if type(instruction) is ai_instr.If:
-                in_condition = True
-            elif type(instruction) is ai_instr.EndIf:
-                in_condition = False
-                if not turns:
-                    turns.append(index + 1)             # after his entrance
-            elif type(instruction) is ai_instr.EndTurn and not in_condition:
-                turns.append(index + 1)
-        for turn, index in reversed(list(enumerate(turns))):
-            if turn % 4 == 0:
-                script.insert(index, call + heal_and_throw)
-            elif turn % 2 == 0:
-                script.insert(index, list(call))
+        entrance_end = instructions.index(ai_instr.EndIf())
+        script.insert(entrance_end + 1, call + heal_and_throw)
 
-        # hit by fight: one more hit
+        # hit by fight: one more hit (and then what final kefka's script does when he is hit)
         counters = instructions.index(ai_instr.EndIf(), instructions.index(ai_instr.EndMainLoop()))
         script.insert(counters + 1, [                   # after what he does when he dies
             ai_instr.If(0x01, self.FIGHT, self.FIGHT),
             ai_instr.Arithmetic(self.HIT_COUNT, ADD | 1),
+            never,
             ai_instr.EndIf(),
         ])
 
@@ -226,7 +222,7 @@ class Grampaluma(FinalBoss):
         width, height = self.TILES
         dadaluma = name_enemy[self.DADALUMA]
         sprite, _ = self.enemy_sprite(dadaluma)
-        self.giant_sprite_mod(dadaluma, scale = (height * 8, len(sprite)))
+        self.giant_sprite_mod(dadaluma, scale = (self.HEIGHT, len(sprite)))
         self.helper_palette_mod(self.iron_fist_id, self.chrome(self.monster_palette(self.iron_fist_id)))
         self.helpers_layout_mod(self.TILES, self.HELPER_TILES, len(self.HELPER_POSITIONS))
         self.chance_condition_mod()

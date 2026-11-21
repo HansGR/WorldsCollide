@@ -36,7 +36,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ## Grampaluma
 
-Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit). His stats are final Kefka's, but he can be slowed and hasted. His attacks:
+Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's, but he can be slowed and hasted. His attacks:
 
 - Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
 - Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you.", and there is no laughing head.
@@ -52,9 +52,9 @@ With what Dadaluma does in Zozo added:
 - Once, below 25% HP: X-Potion, X-Potion or Potion three times (an X-Potion is 9999 HP to him), and Safe.
 - Once, when he has been hit by Fight four times: he throws a Wing Edge at a random character.
 
-Final Kefka's script goes around once in 7 turns or more, so these are before turns inside it: the call before every other turn that is not in a condition, the rest before every fourth (the enemy scripts have not the room for all of it before each). The hits are counted where his script answers being hit, after what it does when he dies.
+A script is blocks: each turn, from the top, the first block whose conditions are all true is the monster's turn. These three are blocks before final Kefka's, so they are tested every turn. A block that ends a turn also has the script start over, which for final Kefka's is Fallen One, so each ends with a condition that is never true: what is before it is done, and the turn goes on with final Kefka's script where it was. The hits are counted the same way where his script answers being hit, before what final Kefka's does there.
 
-A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: level 34, speed 37, vigor 10, defense 125, magic defense 145, evade 120, absorbs poison) with 14000 HP, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk or attacks twice, one as likely as the other.
+A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: speed 37, defense 125, magic defense 145, absorbs poison) with 14000 HP, level 40 for the Scrapper's 34, vigor 14 for 10 and evade 60 for 120, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk at a random character or attacks twice, one as likely as the other.
 
 ## How a final boss is made
 
