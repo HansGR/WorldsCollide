@@ -35,6 +35,8 @@ class UncleUlty(FinalBoss):
 
     WATER = 0x80                            # element
     DARK = 0x01                             # status (first byte): blind
+    MUDDLE_BYTE, MUDDLE = 1, 0x20           # status (second byte)
+    GUMBO_MUDDLE_HIT_RATE = 65
 
     def enemies_mod(self, enemies):
         ulty = self.enemy(enemies)
@@ -79,6 +81,9 @@ class UncleUlty(FinalBoss):
         for attack in ("HyperDrive", "Goner"):
             status = ABILITY_DATA_START + name_id[attack] * AbilityData.DATA_SIZE + STATUS1
             data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.DARK])
+
+        # and the gumbo may muddle them, as his lv.3 muddle did
+        self.status_chance_mod(data, name_id["Goner"], self.MUDDLE_BYTE, self.MUDDLE, self.GUMBO_MUDDLE_HIT_RATE)
 
         self.goner_text_mod(data, self.GONER_TEXT, room = True)
         data.dialogs.set_single_line_battle_text(self.SECOND_TEXT, self.GONER_TEXT_2)

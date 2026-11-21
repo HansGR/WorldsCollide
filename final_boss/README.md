@@ -30,7 +30,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 - Kefka's battle script with water for bolt: CleanSweep for Bolt 3 above 53% HP, and for the first Train below it. Fire 3 and Ice 3 stay.
 - Havoc Wing is Tentacle: the same attack, with the looks and sound of the Tentacle attack.
 - HyperDrive is Ink Blast: its palettes in ink, and it blinds.
-- Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds.
+- Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds everyone it hits. It may also muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
 - Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 125, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
 
 ## How a final boss is made

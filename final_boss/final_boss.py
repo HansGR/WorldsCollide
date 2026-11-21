@@ -121,6 +121,53 @@ class FinalBoss:
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
 
+    def status_chance_mod(self, data, attack, status_byte, status, hit_rate):
+        # an attack with no special effect also sets this status (0x20 of byte 1 (0 to 3) is muddle)
+        # on each target it hits, with a hit rate of its own: the chance is hit rate * (256 - 2 *
+        # magic block) / 256, as it is for a spell, and none for a target protected from the status.
+        # the attack's own status bytes always take with an attack that can not be dodged
+        # called once for each target hit: y = the target. 8 bit a, x and y
+        from data.ability_data import AbilityData
+        EFFECT = 9                              # in the attack's data
+        NO_EFFECT = 0xff
+        TARGET_EFFECTS = 0x23dcd                # what to call for each target, by special effect
+        FREE_EFFECT = 0x45                      # does nothing for each target, or for each strike
+        NOTHING = 0x388c
+        MULTIPLY, RANDOM = 0x4781, 0x4b65       # a * b, 0 to a - 1
+
+        magic_block = 0x3b55                    # 255 - magic block * 2 + 1
+        vulnerable = 0x331c + status_byte       # statuses the target is not protected from
+        status_to_set = (0x3dd4, 0x3dd5, 0x3de8, 0x3de9)[status_byte]
+        chance = 0xee
+
+        effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
+        assert data.rom.get_bytes(effect, 1)[0] == NO_EFFECT, "the attack has a special effect"
+        pointer = TARGET_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer, pointer + 1) == list(NOTHING.to_bytes(2, "little")), "the effect is in use"
+        data.rom.set_bytes(effect, [FREE_EFFECT])
+
+        src = [
+            asm.LDA(magic_block, asm.ABS_Y),
+            asm.XBA(),
+            asm.LDA(hit_rate, asm.IMM8),
+            asm.JSR(MULTIPLY, asm.ABS),
+            asm.XBA(),
+            asm.STA(chance, asm.DIR),
+            asm.LDA(100, asm.IMM8),
+            asm.JSR(RANDOM, asm.ABS),
+            asm.CMP(chance, asm.DIR),
+            asm.BGE("RETURN"),
+            asm.LDA(vulnerable, asm.ABS_Y),
+            asm.AND(status, asm.IMM8),
+            asm.ORA(status_to_set, asm.ABS_Y),
+            asm.STA(status_to_set, asm.ABS_Y),
+            "RETURN",
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: status chance")
+        Reserve(pointer, pointer + 1, "final boss: status chance pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
+
     def special_attack_animation_mod(self, attack):
         # his special attack (havoc wing) looks and sounds like this attack, one the lore command
         # animates (0x8b and up: the enemies' own), and is otherwise what it was: when the battle
