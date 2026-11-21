@@ -13,7 +13,7 @@ class UncleUlty(FinalBoss):
     #
     #   Havoc Wing  Tentacle, with the looks and sound of the tentacle attack
     #   HyperDrive  Ink Blast: black, and blinds
-    #   Goner       Sea Soup (seafood soup): he shows a shrimp before it, and it blinds
+    #   Goner       Gumbo: he shows a shrimp before it, and it blinds
     #   Revenger    Imp Sonata: the imp spell on the whole party
     NAME = "Uncle Ulty"
     LEVELS = 5
@@ -21,10 +21,11 @@ class UncleUlty(FinalBoss):
 
     ULTROS = "Ultros 2"                     # 1 is the head in the river, the others have the tentacles
     SHADOW_COLOR, SHADOW_ROWS = 1, range(64)
+    LOWER = 32                              # pixels: his sprite is 94 high, and clear of the boxes at the top
 
     ABILITY_NAMES = {
         "HyperDrive"    : "Ink Blast",
-        "Goner"         : "Sea Soup",       # (10 letters at most)
+        "Goner"         : "Gumbo",
         "Revenger"      : "Imp Sonata",
     }
     GONER_TEXT = "Gwee-hee-hee...<wait 60 frames><end>"
@@ -41,6 +42,7 @@ class UncleUlty(FinalBoss):
         ulty.special_name = "Tentacle"              # was Havoc Wing
         ulty.speed = min(round(ulty.speed * self.SPEED), 2 ** 8 - 1)
         ulty.absorb_elements |= self.WATER
+        self.lower_mod(enemies, self.LOWER)
 
     def scripts_mod(self, scripts):
         import data.enemy_script_commands as ai_instr
@@ -72,7 +74,7 @@ class UncleUlty(FinalBoss):
         self.rename_abilities(data, self.ABILITY_NAMES)
         self.party_status_attack_mod(data, "Imp", self.IMP_SONATA_HIT_RATE)
 
-        # ink blast and the soup blind whoever they do not kill
+        # ink blast and the gumbo blind whoever they do not kill
         STATUS1 = 10
         for attack in ("HyperDrive", "Goner"):
             status = ABILITY_DATA_START + name_id[attack] * AbilityData.DATA_SIZE + STATUS1
@@ -89,7 +91,7 @@ class UncleUlty(FinalBoss):
         self.special_attack_animation_mod(name_id["Tentacle"])
         self.goner_sprite_mod(shrimp.pixels(), shrimp.palette())
         self.ink_blast_mod(name_id["HyperDrive"])
-        self.soup_mod(name_id["Goner"])
+        self.gumbo_mod(name_id["Goner"])
 
     def _palette(self, palette):
         address = PALETTES + palette * PALETTE_SIZE
@@ -117,7 +119,7 @@ class UncleUlty(FinalBoss):
             space.write(ink_palette)
 
 
-    def soup_mod(self, goner):
+    def gumbo_mod(self, goner):
         # goner, which only final kefka has, in blue and black for red: the palette of its streaks,
         # and what its animation script does to the colors of the background and of the monster
         #
@@ -135,7 +137,7 @@ class UncleUlty(FinalBoss):
         palette = Read(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER)[0]
         def blue(color):
             return (color >> 10) & 0x1f | (color & 0x03e0) | ((color & 0x1f) << 10)
-        space = Reserve(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER, "seafood soup palette")
+        space = Reserve(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER, "gumbo palette")
         space.write(self.add_palette([blue(color) for color in self._palette(palette)]))
 
         pointer = Read(SCRIPT_POINTERS + layer_animation * 2, SCRIPT_POINTERS + layer_animation * 2 + 1)
@@ -153,5 +155,5 @@ class UncleUlty(FinalBoss):
             red, blue = bytes.fromhex(red), bytes.fromhex(blue)
             assert script.count(red) == 1
             script = script.replace(red, blue)
-        space = Reserve(script_address, script_address + SCRIPT_SIZE - 1, "seafood soup animation script")
+        space = Reserve(script_address, script_address + SCRIPT_SIZE - 1, "gumbo animation script")
         space.write(list(script))

@@ -23,14 +23,14 @@ Umaro at twice the size of his sprite (without the shadow under his feet: he is 
 
 ## Uncle Ulty
 
-Ultros (the one with all his tentacles) at twice the size of his sprite, without his shadow.
+Ultros (the one with all his tentacles) at twice the size of his sprite, without his shadow, and low enough on the screen to be clear of the boxes at the top.
 
 - 5 levels above what final Kefka would be in the battle and a fifth faster, as Ultimaro.
 - Absorbs water.
 - Kefka's battle script with water for bolt: CleanSweep for Bolt 3 above 53% HP, and for the first Train below it. Fire 3 and Ice 3 stay.
 - Havoc Wing is Tentacle: the same attack, with the looks and sound of the Tentacle attack.
 - HyperDrive is Ink Blast: its palettes in ink, and it blinds.
-- Goner is Sea Soup (seafood soup: an attack's name holds 10 letters). Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds.
+- Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds.
 - Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 125, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
 
 ## How a final boss is made
@@ -50,6 +50,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 
 - `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy at twice its size, in that enemy's palette. The enemy needs a small mold (a sprite of up to 64x64 pixels) and 4bpp graphics. A shadow under its feet can be removed.
 - `rename_abilities(data, {name: new name})` renames attacks in the box at the top of the screen.
+- `lower_mod(enemies, pixels)` puts him lower on the screen than Kefka, for a sprite less high than his.
 - `goner_sprite_mod(pixels, palette)` shows a 32x32 picture where Kefka's laughing head appears before Goner.
 - `goner_text_mod(data, text)` is what is said before Goner. A line holds some 32 letters.
 - `special_attack_animation_mod(attack)` gives his special attack (Havoc Wing) the looks and sound of another attack.

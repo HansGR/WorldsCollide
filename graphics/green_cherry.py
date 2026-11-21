@@ -2,8 +2,7 @@
 # final kefka's laughing head was), drawn after the concept art of umaro's green cherries
 #
 # as it is seen in battle: the stems meet on the left, toward ultimaro. 32x32 pixels, "." is transparent
-# and 1-7 are the colors of PALETTE. the animation has 14 tiles of its own, so at least 2 of the 16
-# 8x8 tiles must be left empty
+# and 1-7 are the colors of PALETTE
 
 PIXELS = [
     "................................",

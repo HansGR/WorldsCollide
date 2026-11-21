@@ -66,10 +66,8 @@ class TestMonsterSprite(unittest.TestCase):
                 self.assertEqual(len(palette), 8)
                 self.assertTrue(all(0 <= color < 0x8000 for color in palette))
 
-                # the animation it replaces has 14 tiles of its own
-                tiles = sum(any(pixels[row + y][column + x] for y in range(8) for x in range(8))
-                            for row in range(0, art.SIZE, 8) for column in range(0, art.SIZE, 8))
-                self.assertLessEqual(tiles, 14)
+                # 4 by 4 tiles: the animation it replaces has 14 of its own and 4 more are free
+                self.assertEqual(art.SIZE, 32)
 
     def test_without_shadow_keeps_the_inside(self):
         # a dark patch closed in by the sprite is not its shadow

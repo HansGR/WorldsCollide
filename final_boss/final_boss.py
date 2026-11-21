@@ -55,6 +55,17 @@ class FinalBoss:
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
 
+    def lower_mod(self, enemies, pixels):
+        # he is this much lower on the screen than final kefka (who is 16 pixels from its top), in
+        # steps of 8 pixels: for a sprite that is not as high, to be clear of the boxes at the top.
+        # (leaving the top of his mold empty instead hangs the battle as he appears)
+        FINAL_FORMATION = 0x202             # the last tier of the final battle, he is its first enemy
+        POSITION_PIXELS = 8
+
+        formation = enemies.formations.formations[FINAL_FORMATION]
+        assert formation.enemy_ids[0] == self.enemy_id
+        formation.enemy_y_positions[0] += pixels // POSITION_PIXELS
+
     def rename_abilities(self, data, names):
         # the attacks named in the box at the top of the screen, {name : new name}. -steveify names them all
         import data.text as text
@@ -165,9 +176,8 @@ class FinalBoss:
 
     def goner_sprite_mod(self, pixels, palette):
         # before goner final kefka's laughing head appears in front of him and fades away: battle
-        # animation 399. it becomes this picture: 32 rows of 32 palette indices (0 is transparent)
-        # of which at most 14 of the 16 8x8 tiles have pixels, and its 8 colors (the first is unused).
-        # the picture is seen as it is given
+        # animation 399. it becomes this picture: 32 rows of 32 palette indices (0 is transparent),
+        # and its 8 colors (the first is unused). the picture is seen as it is given
         #
         # an attack animation (D0/7FB2, 14 bytes) names an animation for each of 3 layers and their
         # palettes (D2/6000, 8 colors each). a layer's animation (D4/D000, 6 bytes) has its number
@@ -179,7 +189,8 @@ class FinalBoss:
         # left to right)
         #
         # the head is 4 16x16 tiles, flipped. their 14 8x8 tiles (2 are the empty tile) are used by
-        # nothing else, and neither is that part of the layout
+        # nothing else, and neither is that part of the layout. a picture with pixels in more than
+        # 14 of its 16 tiles takes the rest from the free space after the last of the graphics
         ATTACK_ANIMATIONS, ATTACK_ANIMATION_SIZE = 0x107fb2, 14
         LAYER_ANIMATIONS, LAYER_ANIMATION_SIZE = 0x14d000, 6
         FRAME_POINTERS, FRAMES = 0x14df3c, 0x110000
@@ -212,6 +223,11 @@ class FinalBoss:
         own_tiles = [word(layout_row + column * 2) for layout_row in layout_rows for column in range(TILES)]
         own_tiles = [tile for tile in own_tiles if tile != EMPTY_TILE]
 
+        FREE_GRAPHICS_START, FREE_GRAPHICS_END = 0x14c998, 0x14c9ff
+        first_free_tile = (FREE_GRAPHICS_START - GRAPHICS) // monster_sprite.TILE_SIZE_3BPP
+        free_tiles = (FREE_GRAPHICS_END + 1 - FREE_GRAPHICS_START) // monster_sprite.TILE_SIZE_3BPP
+        own_tiles += range(first_free_tile, first_free_tile + free_tiles)
+
         # (the frame flips its tiles, and an animation is flipped again when a monster is the
         # attacker: the picture is seen as it is stored)
         for row, layout_row in enumerate(layout_rows):
@@ -223,7 +239,7 @@ class FinalBoss:
                     layout += EMPTY_TILE.to_bytes(2, "little")
                     continue
 
-                own_tile = own_tiles.pop(0)     # (the picture has no more tiles than the head had)
+                own_tile = own_tiles.pop(0)
                 layout += own_tile.to_bytes(2, "little")
 
                 tile_address = GRAPHICS + own_tile * monster_sprite.TILE_SIZE_3BPP
@@ -268,7 +284,6 @@ class FinalBoss:
         pixels, enemy_spec = self.small_sprite(enemy)
         if shadow_rows:
             pixels = monster_sprite.without_shadow(pixels, shadow_color, shadow_rows)
-
         mold, graphics = monster_sprite.sprite_data(monster_sprite.scale(pixels, GIANT_SPRITE_SCALE))
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)
 
