@@ -25,7 +25,7 @@ Umaro at twice the size of his sprite (without the shadow under his feet: he is 
 
 Ultros (the one with all his tentacles) at twice the size of his sprite, without his shadow, and low enough on the screen to be clear of the boxes at the top.
 
-- 5 levels above what final Kefka would be in the battle and a fifth faster, as Ultimaro.
+- 5 levels above what final Kefka would be in the battle, as Ultimaro, but no faster than Kefka. A tenth more HP, up to the 65535 an enemy can have: Kefka's 62000 become 65535.
 - Absorbs water.
 - Kefka's battle script with water for bolt: CleanSweep for Bolt 3 above 53% HP, and for the first Train below it. Fire 3 and Ice 3 stay.
 - Havoc Wing is Tentacle: the same attack, with the looks and sound of the Tentacle attack.

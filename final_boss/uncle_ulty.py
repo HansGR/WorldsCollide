@@ -17,7 +17,7 @@ class UncleUlty(FinalBoss):
     #   Revenger    Imp Sonata: the imp spell on the whole party
     NAME = "Uncle Ulty"
     LEVELS = 5
-    SPEED = 1.2
+    HP = 1.1                                # more than final kefka's, up to the most an enemy can have
 
     ULTROS = "Ultros 2"                     # 1 is the head in the river, the others have the tentacles
     SHADOW_COLOR, SHADOW_ROWS = 1, range(64)
@@ -42,7 +42,7 @@ class UncleUlty(FinalBoss):
         ulty = self.enemy(enemies)
         ulty.name = self.NAME
         ulty.special_name = "Tentacle"              # was Havoc Wing
-        ulty.speed = min(round(ulty.speed * self.SPEED), 2 ** 8 - 1)
+        ulty.hp = min(round(ulty.hp * self.HP), 2 ** 16 - 1)
         ulty.absorb_elements |= self.WATER
         self.lower_mod(enemies, self.LOWER)
 
