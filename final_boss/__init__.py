@@ -30,7 +30,19 @@ _FINAL_BOSSES = {
 }
 NAMES = list(_FINAL_BOSSES)
 
+# the attacks only final kefka has, which the other final bosses change
+OWN_ABILITIES = ("HyperDrive", "Goner")
+
 _final_boss = None
+
+def own_abilities():
+    # with -fb (any final boss but the default: a random one may be kefka), the final boss's attacks
+    # are his alone: no other enemy gets them from ability scaling (they are taken out of its tiers,
+    # data/enemy_script_custom_commands.py, which would otherwise tell a random final boss apart
+    # before the battle), and with -sfb his own are not scaled into others
+    # (data/enemy_script_abilities.py)
+    import args
+    return OWN_ABILITIES if args.final_boss != KEFKA else ()
 
 def get():
     # the seed's final boss. the first call chooses it (so that a random one is chosen at the same

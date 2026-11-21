@@ -159,8 +159,7 @@ class EnemyScriptAbilities:
         name = id_name[ability_id]
 
         import final_boss
-        boss = final_boss.get()
-        if name in boss.OWN_ABILITIES and enemy.id == boss.enemy_id:
+        if name in final_boss.own_abilities() and enemy.id == final_boss.get().enemy_id:
             return ability_id   # the final boss's own attack stays his (and is in no tier)
 
         if name not in self.SPELL_CATEGORY:

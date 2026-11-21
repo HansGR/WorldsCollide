@@ -44,7 +44,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 | `data_mod(data)` | `data/data.py`, as the data is written | Attack names, spell data, battle text |
 | `battle_mod()` | `battle/final_boss.py` | Code and graphics of the battle |
 
-`OWN_ABILITIES` are the attacks only final Kefka has which the boss changes (HyperDrive and Goner, for both): ability scaling (`-ase`, `-asr`) gives them to no other enemy, as they are taken out of its tiers, and with `-sfb` the boss's own are not scaled into other attacks. No other enemy's script has them. In the vanilla data HyperDrive is also one of Siegfried's (enemy 55) attacks under Control, which is left as it is.
+`final_boss.OWN_ABILITIES` are the attacks only final Kefka has, which the other final bosses change (HyperDrive and Goner). With `-fb` (a named boss or `random`, even when the random one is Kefka, so that the scaled attacks of other enemies do not tell which it is) ability scaling (`-ase`, `-asr`) gives them to no other enemy, as they are taken out of its tiers, and with `-sfb` the final boss's own are not scaled into other attacks. Without `-fb` (or with `-fb kefka`, the default, which is not in the flags) scaling is as it was. No other enemy's script has them. In the vanilla data HyperDrive is also one of Siegfried's (enemy 55) attacks under Control, which is left as it is.
 
 `LEVELS` is how many levels he is above final Kefka (`battle/load_enemy_level.py` adds them when the battle loads him, so they follow level scaling and the objectives' levels).
 

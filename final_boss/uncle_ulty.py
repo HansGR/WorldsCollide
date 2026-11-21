@@ -17,7 +17,6 @@ class UncleUlty(FinalBoss):
     #   Revenger    Imp Sonata: the imp spell on the whole party
     NAME = "Uncle Ulty"
     LEVELS = 5
-    OWN_ABILITIES = ("HyperDrive", "Goner")
     HP = 1.1                                # more than final kefka's, up to the most an enemy can have
 
     ULTROS = "Ultros 2"                     # 1 is the head in the river, the others have the tentacles

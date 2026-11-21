@@ -146,9 +146,9 @@ class EnemyScriptCommands:
                       ability_tiers.wind, ability_tiers.water, ability_tiers.poison, ability_tiers.pearl,
                       ability_tiers.non_elemental, ability_tiers.cure, ability_tiers.tek, ability_tiers.damage]
 
-        # the attacks a final boss other than kefka makes its own are not in the tiers
+        # with -fb, the final boss's own attacks are not in the tiers
         import final_boss
-        own_abilities = [name_id[name] for name in final_boss.get().OWN_ABILITIES]
+        own_abilities = [name_id[name] for name in final_boss.own_abilities()]
 
         tier_addresses = []
         for category in categories:
