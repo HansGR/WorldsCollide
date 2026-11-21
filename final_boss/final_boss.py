@@ -13,6 +13,9 @@ LARGE_MOLDS = 0x12ac24
 GIANT_SPRITE_POINTER = 0x7fff       # a graphics pointer no monster has
 GIANT_SPRITE_SCALE = 2
 
+HELPERS_MOLD = 13                   # the mold of a final boss with helpers (the game has 0 to 12)
+HELPERS = 0x06                      # his helpers: the second and third enemies of his formation
+
 ABILITY_NAMES_START, FIRST_NAMED_ABILITY, ABILITY_NAME_SIZE = 0x26f7b9, 81, 10
 ABILITY_DATA_START = 0x046ac0
 
@@ -54,6 +57,189 @@ class FinalBoss:
 
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
+
+    def helpers_mod(self, enemies, helper, positions, boss_position):
+        # the final boss has helpers: enemies of this kind which are in his formation but not in the
+        # battle until his script brings them in (ai_instr.ChangeEnemies(animation, 0, HELPERS)).
+        # positions are theirs on the screen and boss_position his, (x, y) in steps of 8 pixels.
+        # helpers_layout_mod (battle_mod) makes the room for their graphics
+        FINAL_FORMATION = 0x202             # the last tier of the final battle, he is its first enemy
+        MOLD_SHIFT = 4
+
+        formation = enemies.formations.formations[FINAL_FORMATION]
+        assert formation.enemy_ids[0] == self.enemy_id
+        formation.mold = (HELPERS_MOLD << MOLD_SHIFT) | (formation.mold & 0x0f)
+        formation.enemy_x_positions[0], formation.enemy_y_positions[0] = boss_position
+        for slot, (x, y) in enumerate(positions, start = 1):
+            formation.enemy_ids[slot] = helper
+            formation.enemy_x_positions[slot], formation.enemy_y_positions[slot] = x, y
+
+    def helpers_layout_mod(self, boss_tiles, helper_tiles, helpers = 2):
+        # a formation's monsters share 16x16 tiles of graphics (128x128 pixels), which its mold divides
+        # between them: each has a rectangle of the 16x16 (where it is, (row * 16 + column) * 0x20,
+        # and its width and height in tiles). the final formation's mold gives its one monster all
+        # of it. this adds a mold: the final boss has the top (width, height) and the helpers are in
+        # a row under him, (width, height) each
+        #
+        # the molds' pointers have no room for one more, so they are moved. the same for the lists of
+        # the 32x32 pixel sprites each monster of a mold is drawn with when it is one (16 of them
+        # cover the 16x16 tiles): the final boss and his helpers do not divide the tiles in steps of
+        # 32 pixels, so as sprites they would show some of each other
+        MOLDS, MOLD_COUNT = 0x2d01a, 13                 # pointers (bank c2), for each mold
+        MOLDS_USERS = [0x120d1, 0x1254a]                # lda $c2d01a,x
+        SPRITES, SPRITES_SIZE = 0x2c4a4, 12             # 6 pointers (bank c2) for each mold
+        SPRITES_USERS = [(0x13e98, 0), (0x13e9e, 1)]    # lda $c2c4a4,x and lda $c2c4a5,x
+        NO_SPRITES = 0xc540
+        MONSTERS = 6
+        TILES, TILE_SIZE, SPRITE_TILES = 16, 0x20, 4
+        assert HELPERS_MOLD == MOLD_COUNT
+
+        boss_width, boss_height = boss_tiles
+        helper_width, helper_height = helper_tiles
+        assert boss_width <= TILES and boss_height + helper_height <= TILES and helpers * helper_width <= TILES
+
+        rectangles = [(0, 0, boss_width, boss_height)]
+        rectangles += [(boss_height, index * helper_width, helper_width, helper_height) for index in range(helpers)]
+        rectangles += [(0, 0, 0, 0)] * (MONSTERS - len(rectangles))
+
+        mold = []
+        for row, column, width, height in rectangles:
+            mold += list(((row * TILES + column) * TILE_SIZE).to_bytes(2, "little")) + [width, height]
+        mold_space = Write(Bank.C2, mold, "final boss: helpers mold")
+
+        pointers = Read(MOLDS, MOLDS + MOLD_COUNT * 2 - 1) + list((mold_space.start_address & 0xffff).to_bytes(2, "little"))
+        pointers_space = Write(Bank.C2, pointers, "final boss: mold pointers")
+        for user in MOLDS_USERS:
+            assert Read(user, user + 3) == [0xbf] + list((MOLDS + 0xc00000).to_bytes(3, "little"))
+            Reserve(user + 1, user + 3, "mold pointers address").write(
+                list(pointers_space.start_address_snes.to_bytes(3, "little")))
+
+        # each monster's sprites: where its first is (x, y in pixels), then which sprites, the lists
+        # one after the other. a sprite is x, y, its first tile (row * 16 + column) and 1. the first
+        # tile of a monster's first sprite is also where its tiles start when it is drawn on the
+        # background. in the final battle the monsters are sprites: 32x32 pixels, which do not divide
+        # these rectangles, so what is left at the right and bottom of each is 16x16 sprites
+        # (_small_sprites_mod). the game's 16 sprites are moved, with these after them
+        PIECES, PIECE_COUNT, PIECE_SIZE = 0x2b9e7, 16, 4
+        PIECES_USERS = [0x13ec7, 0x13ed1, 0x13edb, 0x13ee2]     # lda $c2b9e7,x and the 3 bytes after it
+        MONSTER_SPRITES = 16
+        SMALL_TILES = 2
+
+        pieces = Read(PIECES, PIECES + PIECE_COUNT * PIECE_SIZE - 1)
+        lists, small = [], []
+        for row, column, width, height in rectangles:
+            assert width % SMALL_TILES == 0 and height % SMALL_TILES == 0
+            large_width, large_height = width - width % SPRITE_TILES, height - height % SPRITE_TILES
+            sprites, sizes = [], []
+            for sprite_row in range(0, height, SMALL_TILES):
+                for sprite_column in range(0, width, SMALL_TILES):
+                    large = sprite_row < large_height and sprite_column < large_width
+                    if large and (sprite_row % SPRITE_TILES or sprite_column % SPRITE_TILES):
+                        continue
+                    tile = (row + sprite_row) * TILES + column + sprite_column
+                    sprites.append(len(pieces) // PIECE_SIZE)
+                    sizes.append(0 if large else 1)
+                    pieces += [sprite_column * 8, sprite_row * 8, tile, 0x01]
+            assert len(sprites) <= MONSTER_SPRITES
+            lists += [0, 0] + sprites + [0xff]
+            small += sizes + [0] * (MONSTER_SPRITES - len(sizes))
+        assert len(pieces) // PIECE_SIZE <= 0x80
+        lists_space = Write(Bank.C2, lists, "final boss: helpers mold sprites")
+        sprite_pointers = list((lists_space.start_address & 0xffff).to_bytes(2, "little")) * MONSTERS
+        self._small_sprites_mod(small)
+
+        pieces_space = Write(Bank.C2, pieces, "final boss: monster sprites")
+        for offset, user in enumerate(PIECES_USERS):
+            assert Read(user - 1, user + 2) == [0xbf] + list((PIECES + offset + 0xc00000).to_bytes(3, "little"))
+            Reserve(user, user + 2, "monster sprites address").write(
+                list((pieces_space.start_address_snes + offset).to_bytes(3, "little")))
+
+        table = Read(SPRITES, SPRITES + MOLD_COUNT * SPRITES_SIZE - 1) + sprite_pointers
+        table_space = Write(Bank.C2, table, "final boss: mold sprites")
+        for user, offset in SPRITES_USERS:
+            assert Read(user - 1, user + 2) == [0xbf] + list((SPRITES + offset + 0xc00000).to_bytes(3, "little"))
+            Reserve(user, user + 2, "mold sprites address").write(
+                list((table_space.start_address_snes + offset).to_bytes(3, "little")))
+
+    def _small_sprites_mod(self, small):
+        # where a monster's sprite is given its size bit (and the high bit of its x), in the two
+        # branches of the code which writes the monsters' sprites: with the helpers' mold, the
+        # sprites flagged in small (16 flags for each monster of the formation) are 16x16
+        # 8 bit a, 16 bit x (the sprite * 4) and y, data bank $7e
+        NO_HIGH_X_START, NO_HIGH_X_END = 0x139ac, 0x139bf
+        HIGH_X_START, HIGH_X_END = 0x139c0, 0x139d0
+        CONTINUE = 0x39d1
+
+        mold, monster, monster_sprites, sprites_left = 0x2000, 0x88d2, 0x88b9, 0x2c
+        high_table, large_bits, large_high_x_bits = 0xa17f, 0xa37f, 0xa57f
+        high_oam, temp = 0x0500, 0x44
+
+        small_space = Write(Bank.F0, small, "final boss: small sprites")
+        src = [
+            asm.PHA(),                              # whether x is 256 or more
+            asm.LDA(mold, asm.ABS),
+            asm.CMP(HELPERS_MOLD, asm.IMM8),
+            asm.BNE("LARGE"),
+            asm.PHX(),
+            asm.TDC(),
+            asm.LDA(monster, asm.ABS),
+            asm.ASL(), asm.ASL(), asm.ASL(), asm.ASL(),
+            asm.STA(temp, asm.DIR),
+            asm.LDA(monster, asm.ABS),
+            asm.TAX(),
+            asm.LDA(monster_sprites, asm.ABS_X),
+            asm.SEC(),
+            asm.SBC(sprites_left, asm.DIR),
+            asm.CLC(),
+            asm.ADC(temp, asm.DIR),
+            asm.TAX(),                              # monster * 16 + which of its sprites
+            asm.LDA(small_space.start_address_snes, asm.LNG_X),
+            asm.PLX(),
+            asm.CMP(0x00, asm.IMM8),
+            asm.BEQ("LARGE"),
+
+            asm.PLA(),
+            asm.BEQ("SMALL_NO_HIGH_X"),
+            asm.LDA(large_high_x_bits, asm.ABS_X),
+            asm.EOR(large_bits, asm.ABS_X),
+            asm.BRA("SET"),
+            "SMALL_NO_HIGH_X",
+            asm.LDA(0x00, asm.IMM8),
+            asm.BRA("SET"),
+
+            "LARGE",
+            asm.PLA(),
+            asm.BEQ("LARGE_NO_HIGH_X"),
+            asm.LDA(large_high_x_bits, asm.ABS_X),
+            asm.BRA("SET"),
+            "LARGE_NO_HIGH_X",
+            asm.LDA(large_bits, asm.ABS_X),
+
+            "SET",
+            asm.STY(temp, asm.DIR),
+            asm.PHA(),
+            asm.LDA(high_table, asm.ABS_X),
+            asm.TAY(),
+            asm.PLA(),
+            asm.ORA(high_oam, asm.ABS_Y),
+            asm.STA(high_oam, asm.ABS_Y),
+            asm.LDY(temp, asm.DIR),
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, "final boss: monster sprite size")
+        set_size = space.start_address_snes
+
+        space = Reserve(NO_HIGH_X_START, NO_HIGH_X_END, "monster sprite size, x below 256", asm.NOP())
+        space.write(
+            asm.LDA(0x00, asm.IMM8),
+            asm.JSL(set_size),
+            asm.JMP(CONTINUE, asm.ABS),
+        )
+        space = Reserve(HIGH_X_START, HIGH_X_END, "monster sprite size, x from 256", asm.NOP())
+        space.write(
+            asm.LDA(0x01, asm.IMM8),
+            asm.JSL(set_size),
+        )
 
     def rename_abilities(self, data, names):
         # the attacks named in the box at the top of the screen, {name : new name}. -steveify names them all

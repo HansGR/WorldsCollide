@@ -7,7 +7,7 @@
 | `kefka` | Kefka, as he is. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
 | `ultimaro` | Ultimaro: a giant Umaro |
 | `uncleulty` | Uncle Ulty: a giant Ultros |
-| `grampaluma` | Grampaluma: a giant Dadaluma (so far only his looks: the battle is final Kefka's) |
+| `grampaluma` | Grampaluma: a giant Dadaluma who calls in Iron Fists (a prototype: the rest of the battle is final Kefka's) |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Ultimaro
@@ -33,6 +33,10 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 - HyperDrive is Ink Blast: its palettes in ink, and it blinds.
 - Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds everyone it hits. It may also muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
 - Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 110, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
+
+## Grampaluma (prototype)
+
+Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit), with two Iron Fists in his formation. They are not in the battle at its start: when his timer is above 30 and both are dead or gone, he calls them in, as Dadaluma does in Zozo. When he dies they go with him (final Kefka's script removes every enemy of the formation). The Iron Fists are Zozo's, unchanged, and the rest of the battle is still final Kefka's.
 
 ## How a final boss is made
 
@@ -70,3 +74,4 @@ Rules to keep:
 - Change nothing unless the final boss is chosen. With `-fb kefka` a seed must be what it was before the final boss existed: no space allocated, no random number drawn.
 - The order of final bosses in `_FINAL_BOSSES` is what `-fb random` chooses from. Add new ones at the end, or old random seeds change.
 - A final boss that changes something shared (an attack another enemy uses, an animation, a palette) changes it for the whole seed. Ultimaro only changes what final Kefka alone uses: check before reusing.
+- `helpers_mod(enemies, helper, positions, boss_position)` puts helpers in his formation, and `helpers_layout_mod(boss_tiles, helper_tiles)` makes the room for their graphics. A formation's monsters share 16x16 tiles of graphics (128x128 pixels) which its mold divides between them, and the final formation's mold gives all of it to one monster: this adds a mold (13) where the boss has the top and the helpers a row under him. Three tables are moved to make room for it (the molds' pointers, the sprite lists of each mold's monsters, and the sprites themselves). In the final battle the monsters are drawn as sprites of 32x32 pixels, which do not divide such a mold, so the code that writes them is taught 16x16 sprites for what is left at the right and bottom of each monster (`_small_sprites_mod`). Not handled: a monster of this mold flipped (the flipped lists assume 32x32 sprites), which the final battle does not do.
