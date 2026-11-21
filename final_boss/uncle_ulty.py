@@ -27,9 +27,7 @@ class UncleUlty(FinalBoss):
         "Goner"         : "Sea Soup",       # (10 letters at most)
         "Revenger"      : "Imp Sonata",
     }
-    GONER_TEXT = "Gwee-hee-hee...<wait 60 frames><end>"
-    GONER_TEXT_2 = "It's my special recipe!<wait 60 frames><end>"   # (a line holds some 32 letters)
-    SECOND_TEXT = 0x12                      # a line of vargas which goner_text_mod empties
+    GONER_SPEECH = "Gwee-hee-hee...<wait 60 frames><line>It's my special recipe!<wait 60 frames><wait 60 frames><end>"
     IMP_SONATA_HIT_RATE = 125
 
     WATER = 0x80                            # element
@@ -50,12 +48,7 @@ class UncleUlty(FinalBoss):
         clean_sweep = name_id["CleanSweep"]
         script = scripts.get_script(self.ENEMY)
 
-        # he says two lines before goner
-        goner_text = ai_instr.Message(140)
-        said = [index for index, instruction in enumerate(script.instructions) if instruction == goner_text]
-        assert len(said) == 2
-        for index in reversed(said):
-            script.insert(index + 1, ai_instr.Message(self.SECOND_TEXT))
+        self.goner_speech_mod(scripts, self.GONER_SPEECH)
 
         # above 53% hp, every other turn (fire 3 and ice 3 stay)
         script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special),
@@ -78,8 +71,6 @@ class UncleUlty(FinalBoss):
             status = ABILITY_DATA_START + name_id[attack] * AbilityData.DATA_SIZE + STATUS1
             data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.DARK])
 
-        self.goner_text_mod(data, self.GONER_TEXT, room = True)
-        data.dialogs.set_single_line_battle_text(self.SECOND_TEXT, self.GONER_TEXT_2)
 
     def battle_mod(self):
         from data.bosses import name_enemy
