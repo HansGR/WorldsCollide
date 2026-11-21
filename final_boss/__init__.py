@@ -22,11 +22,16 @@ def _uncle_ulty():
     from final_boss.uncle_ulty import UncleUlty
     return UncleUlty
 
+def _grampaluma():
+    from final_boss.grampaluma import Grampaluma
+    return Grampaluma
+
 # name (the -fb value) : its class, imported when it is chosen
 _FINAL_BOSSES = {
     KEFKA       : _kefka,
     "ultimaro"  : _ultimaro,
     "uncleulty" : _uncle_ulty,
+    "grampaluma": _grampaluma,
 }
 NAMES = list(_FINAL_BOSSES)
 

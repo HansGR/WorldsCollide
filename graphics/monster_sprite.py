@@ -89,6 +89,7 @@ def without_shadow(pixels, shadow_color, rows):
     height, width = len(pixels), len(pixels[0])
     if isinstance(rows, int):
         rows = range(height - rows, height)
+    rows = range(max(rows.start, 0), min(rows.stop, height))
 
     def is_shadow(x, y):
         return y in rows and pixels[y][x] == shadow_color and not any(
@@ -113,5 +114,18 @@ def without_shadow(pixels, shadow_color, rows):
 
     return [[0 if (x, y) in removed else pixel for x, pixel in enumerate(row)] for y, row in enumerate(pixels)]
 
-def scale(pixels, factor):
-    return [[pixel for pixel in row for _ in range(factor)] for row in pixels for _ in range(factor)]
+def scale(pixels, factor, divisor = 1):
+    # the sprite at factor / divisor times its size: each pixel of the result is the one it falls on
+    height, width = len(pixels) * factor // divisor, len(pixels[0]) * factor // divisor
+    return [[pixels[y * divisor // factor][x * divisor // factor] for x in range(width)] for y in range(height)]
+
+def bounds(pixels):
+    # the sprite without the empty rows and columns after its last pixels
+    height = max(y for y, row in enumerate(pixels) if any(row)) + 1
+    width = max(x for row in pixels for x, pixel in enumerate(row) if pixel) + 1
+    return [row[:width] for row in pixels[:height]]
+
+def canvas(pixels, size):
+    # the sprite at the top left of a square of this many pixels a side
+    assert len(pixels) <= size and len(pixels[0]) <= size, "the sprite does not fit"
+    return [row + [0] * (size - len(row)) for row in pixels] + [[0] * size for _ in range(size - len(pixels))]

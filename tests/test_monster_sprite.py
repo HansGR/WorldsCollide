@@ -129,5 +129,19 @@ class TestMonsterSprite(unittest.TestCase):
         self.assertEqual(monster_sprite.mold_tile_count(mold), 2)
         self.assertEqual(monster_sprite.sprite_pixels(mold, monster_sprite.LARGE_MOLD_TILES, graphics), scaled)
 
+    def test_scale_to_fit(self):
+        # a sprite of 88x56 pixels at 16/11 its size is 128 wide, and each pixel is the one it falls on
+        pixels = [[1 + (x + y) % 15 for x in range(88)] for y in range(56)]
+        scaled = monster_sprite.scale(pixels, 128, 88)
+        self.assertEqual((len(scaled), len(scaled[0])), (81, 128))
+        self.assertEqual(scaled[80][127], pixels[55][87])
+        self.assertEqual(scaled[0][:3], [pixels[0][0], pixels[0][0], pixels[0][1]])
+
+        sprite = monster_sprite.canvas(scaled, 128)
+        self.assertEqual((len(sprite), len(sprite[0])), (128, 128))
+        self.assertEqual(monster_sprite.bounds(sprite), scaled)
+        with self.assertRaises(AssertionError):
+            monster_sprite.canvas(monster_sprite.scale(pixels, 2), 128)
+
 if __name__ == '__main__':
     unittest.main()

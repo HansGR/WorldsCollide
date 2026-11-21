@@ -7,6 +7,7 @@
 | `kefka` | Kefka, as he is. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
 | `ultimaro` | Ultimaro: a giant Umaro |
 | `uncleulty` | Uncle Ulty: a giant Ultros |
+| `grampaluma` | Grampaluma: a giant Dadaluma (so far only his looks: the battle is final Kefka's) |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Ultimaro
@@ -50,8 +51,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 
 `FinalBoss` itself is Kefka: it changes nothing. It also has what the others share:
 
-- `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy at twice its size, in that enemy's palette. The enemy needs a small mold (a sprite of up to 64x64 pixels) and 4bpp graphics. A shadow under its feet can be removed.
-- `rename_abilities(data, {name: new name})` renames attacks in the box at the top of the screen.
+- `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy, giant and in that enemy's palette: at twice its size if that fits the 128x128 pixels of a large mold (a monster with a small mold, up to 64x64 pixels, does), or else as large as fits (Dadaluma, 88 pixels wide, is 1.45 times his size), or at `scale = (factor, divisor)`. The enemy needs 4bpp graphics. A shadow under its feet can be removed.
 - `giant_sprite_mod(..., lower = pixels)` puts a sprite less high than the mold lower in it, to be clear of the boxes at the top of the screen. His place in the formation is Kefka's, so the death animation is too.
 - `goner_sprite_mod(pixels, palette)` shows a 32x32 picture where Kefka's laughing head appears before Goner.
 - `goner_text_mod(data, text)` is what is said before Goner. A line holds some 32 letters.

@@ -292,40 +292,47 @@ class FinalBoss:
     def _spec_address(self, enemy):
         return GRAPHICS_SPECS + enemy * GRAPHICS_SPEC_SIZE
 
-    def small_sprite(self, enemy):
-        # the pixels of a monster with a small mold and 4bpp graphics, and its graphics spec
+    def enemy_sprite(self, enemy):
+        # the pixels of a monster with 4bpp graphics (without the empty rest of its mold), and its
+        # graphics spec
         spec = Read(self._spec_address(enemy), self._spec_address(enemy) + GRAPHICS_SPEC_SIZE - 1)
         pointer = spec[0] | (spec[1] << 8)
-        assert not pointer & 0x8000 and not spec[2] & 0x80
+        assert not pointer & 0x8000, "3bpp graphics"
 
-        tiles = monster_sprite.SMALL_MOLD_TILES
-        mold_address = SMALL_MOLDS + spec[4] * monster_sprite.mold_size(tiles)
+        large = spec[2] & 0x80
+        tiles = monster_sprite.LARGE_MOLD_TILES if large else monster_sprite.SMALL_MOLD_TILES
+        mold_address = (LARGE_MOLDS if large else SMALL_MOLDS) + spec[4] * monster_sprite.mold_size(tiles)
         mold = Read(mold_address, mold_address + monster_sprite.mold_size(tiles) - 1)
 
         graphics_address = GRAPHICS + pointer * 8
         graphics_size = monster_sprite.mold_tile_count(mold) * monster_sprite.TILE_SIZE_4BPP
         graphics = Read(graphics_address, graphics_address + graphics_size - 1)
 
-        return monster_sprite.sprite_pixels(mold, tiles, graphics), spec
+        return monster_sprite.bounds(monster_sprite.sprite_pixels(mold, tiles, graphics)), spec
 
-    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0):
-        # the final boss looks like this enemy (one with a small mold: up to 64x64 pixels), at twice its
-        # size and in its palette. a shadow under its feet (its color, and how many of the sprite's last
-        # rows it is in) is removed: the final boss is in the air
+    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None):
+        # the final boss looks like this enemy, giant and in its palette: at twice its size if that
+        # fits the 128x128 pixels of a large mold (it does for a monster with a small mold), or else
+        # as large as fits, or at this scale (factor, divisor). a shadow under its feet (its color,
+        # and how many of the sprite's last rows it is in) is removed: the final boss is in the air
         #
         # the sprite is given to final kefka in kefka's own mold (no other monster uses it). it does not
         # fit where kefka's was and nothing is free in reach of the 15 bit pointer, so it is written
         # wherever there is room and kefka's pointer is a value no monster has, which the graphics
         # loader is taught to send there
-        pixels, enemy_spec = self.small_sprite(enemy)
+        size = monster_sprite.LARGE_MOLD_TILES * monster_sprite.TILE_PIXELS
+        pixels, enemy_spec = self.enemy_sprite(enemy)
         if shadow_rows:
             pixels = monster_sprite.without_shadow(pixels, shadow_color, shadow_rows)
+        if scale is None:
+            longest = max(len(pixels), len(pixels[0]))
+            scale = (GIANT_SPRITE_SCALE, 1) if longest * GIANT_SPRITE_SCALE <= size else (size, longest)
         #
         # a sprite that is not as high as the mold can be this many pixels lower in it, to be clear of
         # the boxes at the top of the screen (it is at the top of the mold otherwise, as all monsters'
         # are). the battle takes a monster's height to be its mold's rows before the first empty one,
         # and hangs on a mold with an empty first row: the rows above the sprite get an empty tile
-        pixels = monster_sprite.scale(pixels, GIANT_SPRITE_SCALE)
+        pixels = monster_sprite.canvas(monster_sprite.scale(pixels, *scale), size)
         if lower:
             assert not any(any(row) for row in pixels[-lower:]), "the sprite is too high to be lower"
             pixels = [[0] * len(pixels[0]) for _ in range(lower)] + pixels[:-lower]
