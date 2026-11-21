@@ -36,7 +36,9 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ## Grampaluma (prototype)
 
-Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit), with two Iron Fists in his formation. They are not in the battle at its start: when his timer is above 30 and both are dead or gone, he calls them in, as Dadaluma does in Zozo. When he dies they go with him (final Kefka's script removes every enemy of the formation). The Iron Fists are Zozo's, unchanged, and the rest of the battle is still final Kefka's.
+Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit), with two ChromeFists in his formation. They are not in the battle at its start: when his timer is above 30 and both are dead or gone, he calls them in, as Dadaluma does his Iron Fists in Zozo. When he dies they go with him (final Kefka's script removes every enemy of the formation). The rest of the battle is still final Kefka's.
+
+A ChromeFist is an Iron Fist in a chrome palette (the Iron Fist's colors by their brightness, as greys), an enemy of its own in the place of one no formation has (382), so Zozo's are as they were. It has 14000 HP, is level 40 (a thrown Dirk then does some 1900 to a level 70 character without much armor; it did 4400 at level 60), is protected from all statuses as the final boss is, and throws a Dirk every turn.
 
 ## How a final boss is made
 
@@ -75,3 +77,4 @@ Rules to keep:
 - The order of final bosses in `_FINAL_BOSSES` is what `-fb random` chooses from. Add new ones at the end, or old random seeds change.
 - A final boss that changes something shared (an attack another enemy uses, an animation, a palette) changes it for the whole seed. Ultimaro only changes what final Kefka alone uses: check before reusing.
 - `helpers_mod(enemies, helper, positions, boss_position)` puts helpers in his formation, and `helpers_layout_mod(boss_tiles, helper_tiles)` makes the room for their graphics. A formation's monsters share 16x16 tiles of graphics (128x128 pixels) which its mold divides between them, and the final formation's mold gives all of it to one monster: this adds a mold (13) where the boss has the top and the helpers a row under him. The molds, the sprite lists of each mold's monsters, the pointers to both and the sprites themselves are all moved to bank F0 to make room for it (bank C2 has little). In the final battle the monsters are drawn as sprites of 32x32 pixels, which do not divide such a mold, so the code that writes them is taught 16x16 sprites for what is left at the right and bottom of each monster (`_small_sprites_mod`). Not handled: a monster of this mold flipped (the flipped lists assume 32x32 sprites), which the final battle does not do.
+- `helper_enemy_mod(enemies, source, name)` makes the helpers an enemy of their own from another (`HELPER_ENEMY`), and `helper_palette_mod(source, palette)` gives them that enemy's looks in another palette (`monster_palette(enemy)` reads one).

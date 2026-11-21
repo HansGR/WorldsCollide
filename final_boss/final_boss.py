@@ -14,6 +14,7 @@ GIANT_SPRITE_POINTER = 0x7fff       # a graphics pointer no monster has
 GIANT_SPRITE_SCALE = 2
 
 HELPERS_MOLD = 13                   # the mold of a final boss with helpers (the game has 0 to 12)
+HELPER_ENEMY = 382                  # an enemy no formation has: the helpers' own
 HELPERS = 0x06                      # his helpers: the second and third enemies of his formation
 
 ABILITY_NAMES_START, FIRST_NAMED_ABILITY, ABILITY_NAME_SIZE = 0x26f7b9, 81, 10
@@ -57,6 +58,48 @@ class FinalBoss:
 
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
+
+    def helper_enemy_mod(self, enemies, source, name):
+        # the helpers are an enemy of their own, made from this one (which stays as it is) in the
+        # place of an enemy no formation has. as the final boss, they are protected from all statuses
+        import copy
+
+        helper = enemies.enemies[HELPER_ENEMY]
+        assert not helper.name
+        for attribute, value in vars(enemies.enemies[source]).items():
+            if attribute != "id":
+                setattr(helper, attribute, copy.deepcopy(value))
+        helper.name = name
+        helper.status_immunities = copy.deepcopy(self.enemy(enemies).status_immunities)
+        return helper
+
+    def helper_palette_mod(self, source, palette):
+        # the helpers look like this enemy with this palette: its 16 colors (r, g, b), 0 to 31 each
+        MONSTER_PALETTES, MONSTER_PALETTE_SIZE = 0x127820, 16   # 8 colors each: a 4bpp monster has two
+        FREE_MONSTER_PALETTE = 766                              # the game's end at 602
+
+        spec = Read(self._spec_address(source), self._spec_address(source) + GRAPHICS_SPEC_SIZE - 1)
+        assert not spec[1] & 0x80, "3bpp graphics"
+        assert len(palette) == MONSTER_PALETTE_SIZE
+
+        address = MONSTER_PALETTES + FREE_MONSTER_PALETTE * MONSTER_PALETTE_SIZE
+        assert not any(Read(address, address + 2 * MONSTER_PALETTE_SIZE - 1))
+        space = Reserve(address, address + 2 * MONSTER_PALETTE_SIZE - 1, "final boss: helpers palette")
+        space.write([(red | (green << 5) | (blue << 10)).to_bytes(2, "little") for red, green, blue in palette])
+
+        spec[2] = (spec[2] & 0xfc) | (FREE_MONSTER_PALETTE >> 8)
+        spec[3] = FREE_MONSTER_PALETTE & 0xff
+        address = self._spec_address(HELPER_ENEMY)
+        Reserve(address, address + GRAPHICS_SPEC_SIZE - 1, "final boss: helpers graphics spec").write(spec)
+
+    def monster_palette(self, enemy):
+        # the 16 colors (r, g, b) of a monster with 4bpp graphics
+        MONSTER_PALETTES, MONSTER_PALETTE_SIZE = 0x127820, 16
+        spec = Read(self._spec_address(enemy), self._spec_address(enemy) + GRAPHICS_SPEC_SIZE - 1)
+        address = MONSTER_PALETTES + (((spec[2] & 0x03) << 8) | spec[3]) * MONSTER_PALETTE_SIZE
+        data = Read(address, address + 2 * MONSTER_PALETTE_SIZE - 1)
+        colors = [data[index] | (data[index + 1] << 8) for index in range(0, len(data), 2)]
+        return [(color & 0x1f, (color >> 5) & 0x1f, (color >> 10) & 0x1f) for color in colors]
 
     def helpers_mod(self, enemies, helper, positions, boss_position):
         # the final boss has helpers: enemies of this kind which are in his formation but not in the
