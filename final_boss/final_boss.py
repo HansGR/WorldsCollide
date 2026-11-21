@@ -89,7 +89,6 @@ class FinalBoss:
         MOLDS_USERS = [0x120d1, 0x1254a]                # lda $c2d01a,x
         SPRITES, SPRITES_SIZE = 0x2c4a4, 12             # 6 pointers (bank c2) for each mold
         SPRITES_USERS = [(0x13e98, 0), (0x13e9e, 1)]    # lda $c2c4a4,x and lda $c2c4a5,x
-        NO_SPRITES = 0xc540
         MONSTERS = 6
         TILES, TILE_SIZE, SPRITE_TILES = 16, 0x20, 4
         assert HELPERS_MOLD == MOLD_COUNT
@@ -105,10 +104,32 @@ class FinalBoss:
         mold = []
         for row, column, width, height in rectangles:
             mold += list(((row * TILES + column) * TILE_SIZE).to_bytes(2, "little")) + [width, height]
-        mold_space = Write(Bank.C2, mold, "final boss: helpers mold")
 
-        pointers = Read(MOLDS, MOLDS + MOLD_COUNT * 2 - 1) + list((mold_space.start_address & 0xffff).to_bytes(2, "little"))
-        pointers_space = Write(Bank.C2, pointers, "final boss: mold pointers")
+        # bank c2 has little room: the molds and their pointers all go to another bank, and the code
+        # which reads them is told the bank
+        MOLDS_DATA_START, MOLDS_DATA_END = 0x2d034, 0x2d0f3
+        MOLDS_BANK_USERS = [0x120c6, 0x12540]           # lda #$c2
+        SPRITES_DATA_START, SPRITES_DATA_END = 0x2c540, 0x2c688
+        SPRITES_BANK_USERS = [0x13ea3]                  # lda #$c2
+
+        def moved(pointers, old_start, new_start):
+            # pointers (words) into a block of data, for the block where it is now
+            words = [int.from_bytes(pointers[index : index + 2], "little") for index in range(0, len(pointers), 2)]
+            words = [word - (old_start & 0xffff) + (new_start & 0xffff) for word in words]
+            return [byte for word in words for byte in word.to_bytes(2, "little")]
+
+        def set_bank(users, space):
+            for user in users:
+                assert Read(user, user + 1) == [0xa9, 0xc2]
+                Reserve(user + 1, user + 1, "bank").write([space.start_address_snes >> 16])
+
+        molds = Read(MOLDS_DATA_START, MOLDS_DATA_END)
+        molds_space = Write(Bank.F0, molds + mold, "final boss: molds")
+        set_bank(MOLDS_BANK_USERS, molds_space)
+
+        pointers = moved(Read(MOLDS, MOLDS + MOLD_COUNT * 2 - 1), MOLDS_DATA_START, molds_space.start_address)
+        pointers += list(((molds_space.start_address + len(molds)) & 0xffff).to_bytes(2, "little"))
+        pointers_space = Write(Bank.F0, pointers, "final boss: mold pointers")
         for user in MOLDS_USERS:
             assert Read(user, user + 3) == [0xbf] + list((MOLDS + 0xc00000).to_bytes(3, "little"))
             Reserve(user + 1, user + 3, "mold pointers address").write(
@@ -144,18 +165,21 @@ class FinalBoss:
             lists += [0, 0] + sprites + [0xff]
             small += sizes + [0] * (MONSTER_SPRITES - len(sizes))
         assert len(pieces) // PIECE_SIZE <= 0x80
-        lists_space = Write(Bank.C2, lists, "final boss: helpers mold sprites")
-        sprite_pointers = list((lists_space.start_address & 0xffff).to_bytes(2, "little")) * MONSTERS
+        all_lists = Read(SPRITES_DATA_START, SPRITES_DATA_END)
+        lists_space = Write(Bank.F0, all_lists + lists, "final boss: mold sprite lists")
+        set_bank(SPRITES_BANK_USERS, lists_space)
+        sprite_pointers = list(((lists_space.start_address + len(all_lists)) & 0xffff).to_bytes(2, "little")) * MONSTERS
         self._small_sprites_mod(small)
 
-        pieces_space = Write(Bank.C2, pieces, "final boss: monster sprites")
+        pieces_space = Write(Bank.F0, pieces, "final boss: monster sprites")
         for offset, user in enumerate(PIECES_USERS):
             assert Read(user - 1, user + 2) == [0xbf] + list((PIECES + offset + 0xc00000).to_bytes(3, "little"))
             Reserve(user, user + 2, "monster sprites address").write(
                 list((pieces_space.start_address_snes + offset).to_bytes(3, "little")))
 
-        table = Read(SPRITES, SPRITES + MOLD_COUNT * SPRITES_SIZE - 1) + sprite_pointers
-        table_space = Write(Bank.C2, table, "final boss: mold sprites")
+        table = moved(Read(SPRITES, SPRITES + MOLD_COUNT * SPRITES_SIZE - 1), SPRITES_DATA_START, lists_space.start_address)
+        table += sprite_pointers
+        table_space = Write(Bank.F0, table, "final boss: mold sprites")
         for user, offset in SPRITES_USERS:
             assert Read(user - 1, user + 2) == [0xbf] + list((SPRITES + offset + 0xc00000).to_bytes(3, "little"))
             Reserve(user, user + 2, "mold sprites address").write(
