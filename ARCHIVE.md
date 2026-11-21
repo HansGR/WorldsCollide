@@ -10,6 +10,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 
 ### FF6 Internals (vanilla reference)
 - [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
+- [Final Bosses, Monster Sprites, Battle Animations & Palettes (2026-11)](#final-bosses-monster-sprites-battle-animations--palettes-2026-11) (monster graphics and molds, attack data and hit chance, battle animation data and script commands, palettes, battle text and events, how a strike is resolved; code on `final-boss`)
 - [FF6 Text Encoding Types](#ff6-text-encoding-types)
 - [Battle MP Zeroing & MP-Drain Criticals (2026-08)](#battle-mp-zeroing--mp-drain-criticals-2026-08)
 - [Battle Command-Menu Cursor Engine & the All-Invalid Hardlock (2026-08)](#battle-command-menu-cursor-engine--the-all-invalid-hardlock-2026-08)
@@ -3639,3 +3640,123 @@ repeat limits). Nothing of that is built yet; this is the groundwork.
   whole tower (lanes, after-switch rooms and the meme chest). Each lists items by
   quantity (most first, then by name), then GP (total and gold chests), Monster-in-a-Box
   and empty chests. Only the seven ruination golden spoilers changed; no ROM did.
+
+---
+
+## Final Bosses, Monster Sprites, Battle Animations & Palettes (2026-11)
+
+Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaros-collide` (the meme spinoff) and `final-boss` (from upstream dev; `-fb VALUE`, package `final_boss/`, whose `README.md` describes the hooks and helpers). Everything below was read from the disassembly and confirmed in the emulator unless marked as a guess. Addresses are ROM offsets unless written `Cx/xxxx`.
+
+### Rules that kept this safe
+
+- **A flag-gated boss must change nothing when off.** No `Write`/`Allocate`, no `random` call, no import with side effects. Check by rolling the same seed on upstream and on the branch and comparing md5: the only difference a new option may make is its line in the flags menu (remove the `options()` entry temporarily to prove the rest is identical).
+- **Check exclusivity before overwriting shared data.** Scan every user of an attack, animation, palette, tile or text before changing it. Final Kefka (enemy 298) alone uses HyperDrive (209), Goner (222) and Revenger (224); Tentacle (208) is shared with Cephaler, Guardian and every Ultros.
+- **C2 battle code runs with 8-bit A, X and Y.** `CPX #imm16` assembled into it executes a `BRK`: black screen. C1 animation code is 8-bit A, 16-bit X/Y.
+- **`EnemyScript.replace(old, new, count=2)` with `new` containing `old` replaces the first occurrence twice**: it searches again from the same index. Insert by index instead.
+
+### Monster sprites
+
+| What | Where |
+|------|-------|
+| Graphics spec, 5 bytes per enemy | `0x127000` (D2/7000): word pointer (bits 0-14 = offset / 8 from E9/7000 = `0x297000`, bit 15 = 3bpp), byte 2 (bit 7 = large mold, bits 0-1 = palette high), byte 3 palette low, byte 4 mold |
+| Small molds (8x8 tiles, 8 bytes) | `0x12a824` |
+| Large molds (16x16 tiles, 32 bytes) | `0x12ac24` |
+| Palettes (8 colors = 16 bytes; a 16 color sprite takes two) | `0x127820` |
+| Tiles | 4bpp 32 bytes (planes 0/1 interleaved by row, then 2/3), 3bpp 24 bytes (plane 2 a byte per row) |
+
+- A mold is a bitmap of which tiles exist, row by row from the top left; the graphics are those tiles in order.
+- The loader adds E9/7000 to the pointer at `0x1210b`-`0x1211d` (C1/210B). A sprite too big for its old place can live anywhere: give the spec a pointer no monster has (`0x7fff`) and hook the loader to substitute the real address.
+- Doubling a small-mold sprite (up to 64x64) gives 128x128, exactly a large mold. Final Kefka's large mold is his alone, so it can be overwritten. A large-mold source would not fit doubled.
+- `graphics/monster_sprite.py` (final-boss branch): `tile_pixels`/`tile_data` (3 and 4bpp), `sprite_pixels`/`sprite_data` (mold + graphics to pixels and back), `scale`, `without_shadow`.
+- **Shadows** are a patch of the outline color (index 1). Remove the pixels of that color that touch no other color (8 neighbours) and are connected to the outside of the sprite; this keeps the outline and the dark inside. Limiting it to the last rows is only needed if the first rule is not enough.
+- Enemies used: Umaro 272 (64x64). Ultros 300 is the head in the river (54x32); 301, 302 and 360 share the tentacled sprite (64x47).
+
+### Enemy data and names
+
+- Enemy data `0xf0000 + id * 32`: speed 0, HP 8-9, MP 10-11, status immunities 20-22, absorb 23, nullify 24, weak 25 (elements: fire 01, ice 02, bolt 04, poison 08, wind 10, pearl 20, earth 40, water 80), special attack 31.
+- Special attack byte: bit 7 can't be dodged, bit 6 no damage, low 6 bits: below 0x20 a status, 0x20-0x2f damage x (1.5 + n/2) (the value minus 0x20, plus one, is added to the damage incrementer: Kefka's 0x25 = x4), 0x30/0x31 drain HP/MP.
+- Names `0xfc050` and special attack names `0xfd0d0`, 10 characters each.
+- Special attack graphic `0xf37c0 + id`, a byte: index into 8-byte entries at EC/E6E8 (`0x2ce6e8`): swing animation (bytes 0, 1), its palette (2), hit animation (3; +0x200 if >= 0x60), its palette (4), sound (6). Copying another enemy's byte copies the look (Umaro's 0x0c = Tackle).
+- In battle (enemy slot = 8 + 2 * index): enemy id `$33A8,X` (word), level `$3B18`, HP `$3BF4`, status `$3EE4`/`$3EE5` (dark 01 and imp 20 in the first, berserk 10 in the second), absorb `$3BCC`, magic block stored as 255 - 2 * MBlock + 1 at `$3B55`.
+- Level is set when the battle loads the enemy (`battle/load_enemy_level.py`): add a bonus there, after scaling and objectives, rather than in the data.
+
+### Enemy scripts
+
+- Pointers `0xf8400` (word per enemy), scripts from `0xf8700`. Two sections, each ended by `FF`: the turn loop, then the counterattacks.
+- `F0 a b c` one of three attacks, `F1 t` target (36 self, 43 all characters, 47 default), `F3 lo hi` one-line text, `F4` one of three commands, `F7 n` battle event, `F9 op var bit` variable, `FA` monster animation (`FA 0A` is the laughing head), `FC` condition (`FC 06 36 n` HP, a percentage in WC; `FC 15` bit clear; `FC 12` killed; `FC 05` damaged), `FD` wait a turn, `FE` end if, anything else an attack.
+- Attack id to command is the table at C2/1DBF: 0x8b-0xed are "Lore" (0x0c), 0xee Battle and 0xef Special are Fight.
+- **Jump for any enemy** (`data/enemy_script_custom_commands.py`, `JUMP = 0x63`, installed only when asked): a routine replacing `JSR $1DBF` at `0x21b25` returns the jump command (0x16) for that value, so `F0` can choose it. Dragon Horn is `LDA $3C44,X : BPL` at C2/1820; extra landings in `$3A70`, `$3A8E` = FF while continuous.
+- Final Kefka: at or below 13% and 53% HP the Goner sequence (text, head, Goner); counters below 17% (Ultima) and 49% (HyperDrive).
+
+### Attack data
+
+`0x46ac0 + id * 14`: targets 0, elements 1, flags1 2 (01 physical), flags2 3 (02 not reflectable, 08 Runic can absorb), flags3 4 (04 lift status, 08 toggle status, 20 can't be dodged), MP 5, power 6, flags4 7, hit rate 8, effect 9, statuses 10-13. Targets: 01 cursor moves, 02 one side only, 04 all, 08 one side, 20 several, 40 starts on the enemy, 80 random.
+
+- **Magic hit chance** (C2/22EC on): hit rate 255 always hits; otherwise the chance is `hit rate * (256 - 2 * MBlock) / 256` percent. Bserk's 150 never misses below MBlock 44; 75 hits 75% at 0 and 51% at 40. Status modifiers only apply to physical hits.
+- "Spell on the whole party" (Enrager, Imp Sonata): copy the spell's 14 bytes over Revenger, keep Revenger's targets byte (0x6a), set not-reflectable, clear Runic, set the hit rate. The Imp spell toggles (flags3 08), so a second cast cures.
+- Adding a status to a damaging attack is one bit in bytes 10-13 (blind = byte 10, 01).
+- Names: spells `0x26f567` (7 characters), other attacks `0x26f7b9` from id 81 (**10 characters**: "Seafood Soup" does not fit). `-steveify` overwrites them all.
+
+### How a strike is resolved and shown
+
+- C2 resolves the **whole command first**: every strike picks its target, computes damage and takes the HP, in order. Then the queued animations play. A character killed by the first landing of a multi-jump is already dead when the second picks its target; the animation has no say.
+- Damage numbers are their own queue entry and show about 12 frames after the attack's animation script ends. To show them sooner, end the script sooner.
+- Outside an animation the monster layer is drawn over the characters and the numbers: a monster left standing on its target hides both.
+- A monster special is the Fight command with attack 0xEF and `$3412` = 6 (C2/299F). The animation record is `$B4`-`$B7`, queued by `JSR $35AD` at C2/3414. Wrapping that call to queue `$B5` = 0x0c, `$B6` = attack id instead makes the special look and sound like that attack while its damage stays the special's.
+
+### Battle animations
+
+| What | Where |
+|------|-------|
+| Attack animation, 14 bytes x 406 | `0x107fb2` (D0/7FB2). Words 0, 2, 4: layer animations for sprites, BG1, BG3 (`ffff` none); bytes 6, 7, 8 their palettes; byte 9 sound. Index = attack id for attacks 0-255; others through the table at C2/B4BE (monster jump landing is 297, the laughing head 399) |
+| Layer animation, 6 bytes x 650 | `0x14d000` (D4/D000). Byte 0: frames (low 6 bits), bit 6 adds 0x100 to the layout number, bit 7 another loader. Byte 1 tile layout. Word 2 first frame. Bytes 4, 5 width and height in 16 pixel tiles |
+| Frame pointers | `0x14df3c`, into bank D1. A frame is pairs: position (x high nibble, y low) and 16x16 tile (low 6 bits, 8 to a row; bit 6 flipped) |
+| Tile layouts | `0x120000` (D2/0000), layout n starts at n * 0x40. Rows of 16 8x8 tiles, a word each: tile number (14 bits), bit 14 flipped left-right, bit 15 upside down. Tile 0x15 is empty |
+| 3bpp graphics | `0x130000` (D3/0000), 24 bytes a tile. The last is 0x1310; four more fit in the free space at `0x14c998` |
+| Palettes, 8 colors | `0x126000` (D2/6000). 0x00-0xef are the game's; **0xf7-0xff (`0x126f70` on) are free space** |
+| Script pointers | `0x11ead8` (D1/EAD8), word per layer animation, into bank D0. Free space in D0: `0x1095e6`-`0x1097ff`, `0x10cf4a`-`0x10cfff`, `0x10fc7a`-`0x10fcff` |
+
+- An animation is mirrored when a monster is the attacker, and frames can flip their tiles: for the laughing head the two cancel, so a picture stored as drawn is seen as drawn.
+- The laughing head: layer animation 0x281, one frame of four 16x16 tiles = 32x32 pixels, layout 0x11c rows 4-7 columns 0-3, tiles 0x1303-0x1310 (14 real tiles and 2 empty: a replacement may fill at most 14 of its 16 8x8 tiles, or use the 4 free tiles). Its palette 0xef is shared with attack animation 50, so give a replacement its own.
+- Layers drawn with additive color (HyperDrive's burst) only get dimmer with a dark palette; they cannot be made black by palette alone.
+
+**Script commands** (main table C1/D9E3 for 0x80 and up; `80 xx` sub-commands at C1/C884):
+
+| Bytes | Meaning |
+|-------|---------|
+| `0f` | wait a frame |
+| `89 n` ... `8a` | repeat n + 1 times |
+| `86 x` | move the thread: low 5 bits + 1 pixels; `c0` up, `20` down, `a0` up-right (`df` up 32, `c7` up 8, `27` down 8) |
+| `d1 01` / `d1 00` | the monster moves with the thread / stops (`$62D2`) |
+| `e1 80` / `e1 81` | hide / show the attacking monster (`$61AB`, bit per monster, masks at C1/1A01) |
+| `80 0e` | thread position = the monster's (`$80C3`/`$80CF`), and zero how far it has been moved (`$80AB`/`$80B7`) |
+| `e4` | work out the path from the attacker to the target (8-bit: distances over 127 pixels wrap) |
+| `e2 s n` / `e3 s n` | move along it / back, s pixels a step, looping on themselves; when `e3` finishes it puts the monster at the thread's position. `e3 ff 00` returns at once |
+| `c9 n` | sound |
+| `80 7d n` | skip n bytes if another jump is coming (`$EC10`, set at C1/B9F7 from the continuous-jump flag) |
+| `b6 p`, `b9 p`/`bc p` | color of the background, of the monsters: p = red 80, green 40, blue 20, more 10 (else less), amount in the low nibble |
+| `ff` | end |
+
+- The monster's place is "thread base + how far `e2` moved it", and only the script that moved it can take it back. Leaving it displaced for the next script breaks that script's path. To bounce, rise and hide inside the same script, then `e3 ff 00`.
+- Recoloring Goner (layer 0x1a2, script D0/0083, used by nothing else): swap red and blue in its palette (0xae) and in the `b6`/`b9`/`bc` parameters. The white streak phase comes from `cd ff ab ff ba ff fc ff b0 ff`; setting those to 00 shows the normal background instead, not black.
+
+### Battle text
+
+- **One-line texts** (`F3`): about 32 characters fit the box, and the table is nearly full; a 39-character line overflowed it by 12 bytes.
+- **Multi-line texts** live in another table with a pool of free slots (`data/dialogs/free.py`, `dialogs.allocate_multi_line_battle`). A **battle event** shows them: pointers at `0x109800` (33 events, no room for more), scripts in bank D0; `11` open the window, `01 id` show a text, `10` close, `ff` end. The box is at the bottom of the screen; use `<wait 60 frames>` rather than `<wait for key>`.
+- Free battle events are those only a removed enemy called. 0x04 (Tritoch 276; 593 bytes of script) is the one used and tested. Candidates by the same reasoning, not yet checked for other uses of their script space: 0x12 (Tritoch 277), 0x17 (Kefka at Thamasa 371), 0x0e (Officer 373), 0x0f (Merchant 314). Write the new script at the event's existing address and call it with `F7`.
+- Final Kefka's speech when he appears ("Life... Dreams... Hope...") is multi-line texts 245-247, shown by event 0x20. WC keeps it, and every final boss says it.
+
+### Testing in the emulator
+
+- Fight the last tier alone: point pack 0x165 (`0xf5000 + (0x165 - 256) * 4`) at formation 0x202 twice and call battle `4D 65 bg`. Backgrounds 0x33-0x37 are the final battle's; **0x36 is the last tier's light rays**. Add 0x40 for no battle sound.
+- Force a script choice by patching all three slots of an `F0` in the built ROM; force a phase by writing the enemy's HP each frame (`$3BF4 + 8`); keep the party alive by writing theirs.
+- There is no audio. A sound is confirmed by the request at `$1300`-`$1302` (`$1301` = id).
+- Watch state rather than pictures first: coordinates `$80C3`/`$80CF`, shown `$61AB`, statuses, HP changes per frame. Then take contact sheets (every 4-24 frames) of the moment that matters.
+- Screenshots are RGB565: a 5-bit channel c shows as `c << 3 | c >> 2`, green as `g << 3 | g >> 3`. Painting a palette over a captured frame with that conversion previews it exactly, which is how color variants were compared without rebuilding.
+- A debug seed (an NPC on the airship deck, map 0x06, who heals and starts the fight with no game over) needs an event pack: WC fills the unused ones with random formations, so "unused" does not mean empty. 0x1ff is referenced by nothing.
+
+### Pixel art
+
+- Keep art as a grid of characters in a Python module (`graphics/green_cherry.py`, `graphics/shrimp.py`): hand-editable, no Pillow at build time.
+- FF6's sprites are more muted than they look: mid-tones run 40-55% saturation. A first draft at 65% read as too bright next to the battle; an olive at about 70% of that sat right.
