@@ -36,9 +36,15 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ## Grampaluma (prototype)
 
-Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit), with two ChromeFists in his formation. They are not in the battle at its start: when his timer is above 30 and both are dead or gone, he calls them in, as Dadaluma does his Iron Fists in Zozo. When he dies they go with him (final Kefka's script removes every enemy of the formation). The rest of the battle is still final Kefka's.
+Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit). His stats and attacks are still final Kefka's, and his script is final Kefka's with what Dadaluma does in Zozo added:
 
-A ChromeFist is an Iron Fist in a chrome palette (the Iron Fist's colors by their brightness, as greys), an enemy of its own in the place of one no formation has (382), so Zozo's are as they were. It has 14000 HP, is level 40 (a thrown Dirk then does some 1900 to a level 70 character without much armor; it did 4400 at level 60), is protected from all statuses as the final boss is, and throws a Dirk every turn.
+- He calls in two ChromeFists when his timer is above 30 (about a minute) and both are dead or gone, as Dadaluma does his Iron Fists. They are not in the battle at its start. When he dies they go with him (final Kefka's script removes every enemy of the formation).
+- Once, below 25% HP: X-Potion, X-Potion or Potion three times (an X-Potion is 9999 HP to him), and Safe.
+- Once, when he has been hit by Fight four times: he throws a Wing Edge at a random character.
+
+Final Kefka's script goes around once in 7 turns or more, so these are before turns inside it: the call before every other turn that is not in a condition, the rest before every fourth (the enemy scripts have not the room for all of it before each). The hits are counted where his script answers being hit, after what it does when he dies.
+
+A ChromeFist is an Iron Fist in a dark chrome palette (the Iron Fist's colors by their brightness, as greys), an enemy of its own in the place of one no formation has (382), so Zozo's are as they were. It has 14000 HP, is level 40, and is protected from all statuses but death, as the final boss is from all. Each turn it throws a Dirk (some 1900 to a level 70 character without much armor) or attacks twice (some 400 each), one as likely as the other.
 
 ## How a final boss is made
 
@@ -78,3 +84,4 @@ Rules to keep:
 - A final boss that changes something shared (an attack another enemy uses, an animation, a palette) changes it for the whole seed. Ultimaro only changes what final Kefka alone uses: check before reusing.
 - `helpers_mod(enemies, helper, positions, boss_position)` puts helpers in his formation, and `helpers_layout_mod(boss_tiles, helper_tiles)` makes the room for their graphics. A formation's monsters share 16x16 tiles of graphics (128x128 pixels) which its mold divides between them, and the final formation's mold gives all of it to one monster: this adds a mold (13) where the boss has the top and the helpers a row under him. The molds, the sprite lists of each mold's monsters, the pointers to both and the sprites themselves are all moved to bank F0 to make room for it (bank C2 has little). In the final battle the monsters are drawn as sprites of 32x32 pixels, which do not divide such a mold, so the code that writes them is taught 16x16 sprites for what is left at the right and bottom of each monster (`_small_sprites_mod`). Not handled: a monster of this mold flipped (the flipped lists assume 32x32 sprites), which the final battle does not do.
 - `helper_enemy_mod(enemies, source, name)` makes the helpers an enemy of their own from another (`HELPER_ENEMY`), and `helper_palette_mod(source, palette)` gives them that enemy's looks in another palette (`monster_palette(enemy)` reads one).
+- `chance_condition_mod()` adds a script condition the game does not have, in the place of one it does not use: `If(CHANCE, n, 0)` is true n times in 256. Conditions are tested as the script is read and variables are set when the turn is taken, so a choice between two blocks is made by a variable set from the chance the turn before (the ChromeFists' script).

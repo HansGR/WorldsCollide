@@ -14,6 +14,7 @@ GIANT_SPRITE_POINTER = 0x7fff       # a graphics pointer no monster has
 GIANT_SPRITE_SCALE = 2
 
 HELPERS_MOLD = 13                   # the mold of a final boss with helpers (the game has 0 to 12)
+CHANCE = 0x0a                       # a script condition (chance_condition_mod)
 HELPER_ENEMY = 382                  # an enemy no formation has: the helpers' own
 HELPERS = 0x06                      # his helpers: the second and third enemies of his formation
 
@@ -59,9 +60,35 @@ class FinalBoss:
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
 
+    def chance_condition_mod(self):
+        # a script condition the game does not have: ai_instr.If(CHANCE, n, 0) is true n times in 256.
+        # (conditions are tested as the script is read, before what it has queued is done)
+        # in the place of condition 0x0a, which the game does not use. 8 bit a
+        CONDITIONS = 0x21d55                # pointers
+        UNUSED_CONDITION = 0x1d2c           # rts
+        RANDOM = 0x4b5a                     # a = 0 to 255
+        argument = 0x3a2e
+
+        pointer = CONDITIONS + CHANCE * 2
+        assert Read(pointer, pointer + 1) == list(UNUSED_CONDITION.to_bytes(2, "little"))
+        src = [
+            asm.JSR(RANDOM, asm.ABS),
+            asm.CMP(argument, asm.ABS),
+            asm.BLT("TRUE"),
+            asm.CLC(),
+            asm.RTS(),
+            "TRUE",
+            asm.SEC(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: chance script condition")
+        Reserve(pointer, pointer + 1, "chance script condition pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
+
     def helper_enemy_mod(self, enemies, source, name):
         # the helpers are an enemy of their own, made from this one (which stays as it is) in the
-        # place of an enemy no formation has. as the final boss, they are protected from all statuses
+        # place of an enemy no formation has. as the final boss, they are protected from all statuses,
+        # but for death
         import copy
 
         helper = enemies.enemies[HELPER_ENEMY]
@@ -71,6 +98,7 @@ class FinalBoss:
                 setattr(helper, attribute, copy.deepcopy(value))
         helper.name = name
         helper.status_immunities = copy.deepcopy(self.enemy(enemies).status_immunities)
+        helper.status_immunities.death = 0
         return helper
 
     def helper_palette_mod(self, source, palette):
