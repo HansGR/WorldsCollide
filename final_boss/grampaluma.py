@@ -1,4 +1,4 @@
-from final_boss.final_boss import FinalBoss, HELPERS, HELPER_ENEMY, CHANCE
+from final_boss.final_boss import FinalBoss, HELPERS, HELPER_ENEMY, CHANCE, ABILITY_DATA_START
 
 class Grampaluma(FinalBoss):
     # dadaluma, giant, with what dadaluma does in zozo added to final kefka's script (a prototype:
@@ -14,10 +14,24 @@ class Grampaluma(FinalBoss):
     NAME = "Grampaluma"
 
     DADALUMA = "Dadaluma"
-    HELPER = "Iron Fist"
+    HELPER = "Scrapper"                     # the highest of the enemies with the iron fist's looks: his stats
+    HELPER_LOOKS = "Iron Fist"
     HELPER_NAME = "ChromeFist"
     HELPER_HP = 14000
-    HELPER_LEVEL = 40
+
+    SPECIAL_NAME = "Tiger Claw"             # was havoc wing
+    ABILITY_NAMES = {
+        "Goner"         : "Chi Shock",
+        "Revenger"      : "Time Warp",
+    }
+    GONER_TEXT = "Friends! Lovely to see you.<wait 60 frames><end>"
+    SWEEP = "Confusion"                     # an attack no script, sketch, control or rage uses: his sweep
+    SWEEP_LOOKS = "Sonic Boom"
+    TIME_WARP_HIT_RATE = 150                # slow 2's
+
+    ONE_TARGET = 0x41                       # an attack's targets (its first byte): one, of the other side
+    SEIZURE_BYTE, SEIZURE = 11, 0x40        # in an attack's data: the second status byte (sap)
+    HASTE_BYTE, HASTE = 2, 0x08             # the third status byte
 
     # dadaluma is 88x56 pixels. the monsters of the formation share 16x16 tiles of graphics: he has
     # the top 16x10 (125x80 pixels: 1.43 times his size), and the chromefists 6x6 each under him
@@ -43,11 +57,18 @@ class Grampaluma(FinalBoss):
     FIGHT = 0x00                            # command
 
     def enemies_mod(self, enemies):
-        self.enemy(enemies).name = self.NAME
-        self.iron_fist_id = enemies.get_enemy(self.HELPER)
-        helper = self.helper_enemy_mod(enemies, self.iron_fist_id, self.HELPER_NAME)
+        grampaluma = self.enemy(enemies)
+        grampaluma.name = self.NAME
+        grampaluma.special_name = self.SPECIAL_NAME
+        # for time warp: an enemy protected from slow or haste is protected from both
+        grampaluma.status_immunities.haste = 0
+        grampaluma.status_immunities.slow = 0
+
+        self.iron_fist_id = enemies.get_enemy(self.HELPER_LOOKS)
+        helper = self.helper_enemy_mod(enemies, enemies.get_enemy(self.HELPER), self.HELPER_NAME)
         helper.hp = self.HELPER_HP
-        helper.level = self.HELPER_LEVEL
+        helper.status_immunities.haste = 0
+        helper.status_immunities.slow = 0
         self.helpers_mod(enemies, HELPER_ENEMY, self.HELPER_POSITIONS, self.POSITION)
 
     def scripts_mod(self, scripts):
@@ -108,6 +129,37 @@ class Grampaluma(FinalBoss):
 
         script = scripts.get_script(self.ENEMY)
         instructions = script.instructions
+
+        # his attacks. a script can choose JUMP and THROW (a mithril knife) as it does its attacks
+        from data.enemy_script_custom_commands import JUMP, THROW
+        JUMP_COMMAND, THROW_COMMAND = 0x16, 0x08
+        scripts.enemy_script_custom_commands.command_attacks_mod({
+            JUMP    : (JUMP_COMMAND, 0),
+            THROW   : (THROW_COMMAND, item_id["MithrilKnife"]),
+        })
+        special, train, revenger, nothing = (name_id[name] for name in ["Special", "Train", "Revenger", "Nothing"])
+        sweep, hyperdrive = name_id[self.SWEEP], name_id["HyperDrive"]
+
+        # above 53% hp, every other turn
+        script.replace(ai_instr.RandomAttack(name_id["Fire 3"], train, special),
+                       ai_instr.RandomAttack(THROW, train, special))
+        script.replace(ai_instr.RandomAttack(name_id["Ice 3"], train, special),
+                       ai_instr.RandomAttack(hyperdrive, train, special))
+        script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special),
+                       ai_instr.RandomAttack(sweep, nothing, special))
+
+        # at 53% hp and below, the turns after goner (chi shock; revenger is time warp)
+        script.replace(ai_instr.RandomAttack(special, train, revenger),
+                       ai_instr.RandomAttack(special, THROW, revenger))
+        script.replace(ai_instr.RandomAttack(train, special, revenger),
+                       ai_instr.RandomAttack(train, special, JUMP))
+        script.replace(ai_instr.RandomAttack(special, special, nothing),
+                       ai_instr.RandomAttack(special, JUMP, nothing))
+
+        # no laughing head before chi shock
+        head = ai_instr.Animate(0x0a, 0x01, 0x00)
+        script.remove(head, count = 2)
+
         main_end = instructions.index(ai_instr.EndMainLoop())
 
         turns, in_condition = [], False
@@ -134,6 +186,27 @@ class Grampaluma(FinalBoss):
             ai_instr.EndIf(),
         ])
 
+    def data_mod(self, data):
+        from data.spell_names import name_id
+        from data.ability_data import AbilityData
+
+        self.rename_abilities(data, self.ABILITY_NAMES)
+        self.goner_text_mod(data, self.GONER_TEXT)
+
+        # chi shock also saps
+        status = ABILITY_DATA_START + name_id["Goner"] * AbilityData.DATA_SIZE + self.SEIZURE_BYTE
+        data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.SEIZURE])
+
+        # time warp: slow 2 on the whole party, and haste for every enemy
+        self.party_status_attack_mod(data, "Slow 2", self.TIME_WARP_HIT_RATE)
+        self.party_statuses_mod(data, name_id["Revenger"], self.HASTE_BYTE, self.HASTE)
+
+        # sweep, dadaluma's special: a blow which saps (tentacle is the enemies' one attack that is a blow)
+        sweep = self.new_attack_mod(data, name_id[self.SWEEP], name_id["Tentacle"], "Sweep", name_id[self.SWEEP_LOOKS])
+        status = sweep + self.SEIZURE_BYTE
+        data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.SEIZURE])
+        data.rom.set_bytes(sweep, [self.ONE_TARGET])
+
     @staticmethod
     def chrome(palette):
         # a palette in chrome: its colors by their brightness as dark greys with more contrast, a
@@ -157,3 +230,5 @@ class Grampaluma(FinalBoss):
         self.helper_palette_mod(self.iron_fist_id, self.chrome(self.monster_palette(self.iron_fist_id)))
         self.helpers_layout_mod(self.TILES, self.HELPER_TILES, len(self.HELPER_POSITIONS))
         self.chance_condition_mod()
+        self.jump_mod()
+        self.jump_animation_mod()

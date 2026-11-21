@@ -60,6 +60,158 @@ class FinalBoss:
     def enemy(self, enemies):
         return enemies.enemies[self.enemy_id]
 
+    def jump_mod(self):
+        # when ultimaro jumps (scripts_mod) he lands 2 to 4 times, as
+        # with a dragon horn: where the jump command looks for the jumper's dragon horn ("jump
+        # continuously", bit 7 of its relic effects), he has one
+        # x = the jumper (8 and up are the enemies). 8 bit a, x and y
+        JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END = 0x21820, 0x21822
+
+        relic_effects = 0x3c44
+        enemy_ids = 0x33a8
+        first_enemy = 8
+
+        src = [
+            Read(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END),
+            asm.BMI("RETURN"),                      # branch if the jumper has a dragon horn
+
+            asm.CPX(first_enemy, asm.IMM8),
+            asm.BLT("NO_DRAGON_HORN"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_X),
+            asm.CMP(self.enemy_id, asm.IMM16),
+            asm.A8(),                               # (keeps the zero flag)
+            asm.BNE("NO_DRAGON_HORN"),
+            asm.LDA(0x80, asm.IMM8),
+            asm.RTS(),
+
+            "NO_DRAGON_HORN",
+            asm.LDA(relic_effects, asm.ABS_X),
+
+            "RETURN",
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "ultimaro jumps as with a dragon horn")
+        jumper_relic_effects = space.start_address
+
+        space = Reserve(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END, "jump: load jumper's relic effects", asm.NOP())
+        space.write(
+            asm.JSR(jumper_relic_effects, asm.ABS),
+        )
+
+    def jump_animation_mod(self):
+        # a jumper with more landings to come (only the dragon horn does that) bounces: down onto
+        # the target and straight back up, and it returns to its place only after the last landing.
+        # the game's own animation hops back after every landing
+        #
+        # the damage of a landing shows when its animation has ended, and outside of an animation
+        # monsters are drawn over the characters and the damage. so the jumper goes up at the speed
+        # it took off with and nothing is left to wait for after that: the damage shows as soon as
+        # it is gone
+        #
+        # the landing of a monster's jump is animation script 0x84 (D1/EAD8 has the scripts'
+        # pointers, they are in bank D0). it is copied here with the bounce added after the fall
+        LANDING_SCRIPT = 0x84
+        SCRIPT_POINTERS = 0x11ead8
+        LANDING_START, LANDING_END = 0x10682d, 0x106855
+        FALL_END = 0x10684e                 # the fall's last byte; what follows is the hop back and the end
+
+        landing = Read(LANDING_START, LANDING_END)
+        fall = landing[:FALL_END - LANDING_START + 1]
+        hop_back = landing[FALL_END - LANDING_START + 1:]
+
+        DOWN_8_PIXELS, UP_8_PIXELS, DOWN_32_PIXELS = 0x27, 0xc7, 0x3f
+        assert fall[-6:] == [0x89, 0x13, 0x86, DOWN_8_PIXELS, 0x0f, 0x8a]   # 20 times: move, wait a frame
+        assert hop_back == [0xd1, 0x00, 0x0f, 0xe3, 0x08, 0x03, 0xff]
+
+        src = [
+            fall,
+            0x80, 0x7d, len(hop_back),      # skip the hop back if another landing is coming
+            hop_back,
+
+            0x89, 0x13,                     # 20 times, the way it came:
+                0x86, UP_8_PIXELS,
+                0x0f,                       # wait a frame
+            0x8a,
+            0xe1, 0x80,                     # hide the monster
+            [0x86, DOWN_32_PIXELS] * 5,     # the script is back where the fall ended
+            0xd1, 0x00,                     # (as before the hop back)
+            0xe3, 0xff, 0x00,               # the hop back, all of it at once: the monster is in its place
+            0xff,
+        ]
+        src = [value for values in src for value in (values if isinstance(values, list) else [values])]
+        space = Write(Bank.D0, src, "ultimaro: monster jump landing animation")
+        landing_script = space.start_address
+
+        pointer = SCRIPT_POINTERS + LANDING_SCRIPT * 2
+        space = Reserve(pointer, pointer + 1, "monster jump landing animation script pointer")
+        space.write(
+            (landing_script & 0xffff).to_bytes(2, "little"),
+        )
+
+    def party_statuses_mod(self, data, attack, statuses_byte, statuses):
+        # an attack (which has no special effect) also sets these statuses on every enemy in the
+        # battle, each time it is used, whether it hits or not: statuses_byte is 0 to 3 (0x08 of byte
+        # 2 is haste). enemies protected from them do not get them
+        # once for each strike. 8 bit a, x and y
+        from data.ability_data import AbilityData
+        EFFECT = 9                              # in the attack's data
+        NO_EFFECT = 0xff
+        STRIKE_EFFECTS = 0x242e1                # what to call for each strike, by special effect
+        TARGET_EFFECTS = 0x23dcd
+        FREE_EFFECT = 0x45                      # does nothing for each strike, or for each target
+        NOTHING, NOTHING_FOR_TARGET = 0x3e8a, 0x388c
+        FIRST_ENEMY, ENTITIES_END = 8, 0x14
+
+        enemy_bit, present_enemies = 0x3019, 0x3a75
+        status_to_set = (0x3dd4, 0x3dd5, 0x3de8, 0x3de9)[statuses_byte]
+
+        effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
+        assert data.rom.get_bytes(effect, 1)[0] == NO_EFFECT, "the attack has a special effect"
+        pointer = STRIKE_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer, pointer + 1) == list(NOTHING.to_bytes(2, "little")), "the effect is in use"
+        pointer_for_target = TARGET_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer_for_target, pointer_for_target + 1) == list(NOTHING_FOR_TARGET.to_bytes(2, "little"))
+        data.rom.set_bytes(effect, [FREE_EFFECT])
+
+        src = [
+            asm.LDX(FIRST_ENEMY, asm.IMM8),
+            "ENEMY",
+            asm.LDA(enemy_bit, asm.ABS_X),
+            asm.BIT(present_enemies, asm.ABS),
+            asm.BEQ("NEXT"),
+            asm.LDA(status_to_set, asm.ABS_X),
+            asm.ORA(statuses, asm.IMM8),
+            asm.STA(status_to_set, asm.ABS_X),
+            "NEXT",
+            asm.INX(),
+            asm.INX(),
+            asm.CPX(ENTITIES_END, asm.IMM8),
+            asm.BLT("ENEMY"),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: statuses for the enemies")
+        Reserve(pointer, pointer + 1, "final boss: statuses for the enemies pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
+
+    def new_attack_mod(self, data, attack, source, name, animation_source = None):
+        # an attack which nothing uses (no script, sketch, control, rage or lore) becomes a new one: another's data (returned,
+        # to change), with this name, and the looks of animation_source (or of the source)
+        from data.ability_data import AbilityData
+        from data.spell_names import id_name
+        ANIMATIONS, ANIMATION_SIZE = 0x107fb2, 14
+
+        source_address = ABILITY_DATA_START + source * AbilityData.DATA_SIZE
+        address = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE
+        data.rom.set_bytes(address, data.rom.get_bytes(source_address, AbilityData.DATA_SIZE))
+        self.rename_abilities(data, {id_name[attack] : name})
+
+        if animation_source is None:
+            animation_source = source
+        animation = ANIMATIONS + animation_source * ANIMATION_SIZE
+        data.rom.set_bytes(ANIMATIONS + attack * ANIMATION_SIZE, data.rom.get_bytes(animation, ANIMATION_SIZE))
+        return address
+
     def chance_condition_mod(self):
         # a script condition the game does not have: ai_instr.If(CHANCE, n, 0) is true n times in 256.
         # (conditions are tested as the script is read, before what it has queued is done)

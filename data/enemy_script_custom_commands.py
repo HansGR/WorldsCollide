@@ -10,6 +10,8 @@ CURE0, CURE1, CURE2, TEK0, TEK1, TEK2, DAMAGE0, DAMAGE1, DAMAGE2, SPECIAL0, SPEC
 
 # an attack value (alone or as an 0xf0 argument) which is the jump command, for scripts which call jump_attack_mod
 JUMP = 0x63
+# and one which throws an item, for scripts which call command_attacks_mod
+THROW = 0x64
 
 def get_custom_ability_tier(category_tier):
     if category_tier >= 0x55:
@@ -79,6 +81,38 @@ class EnemyScriptCommands:
             asm.RTS(),
         ]
         space = Write(Bank.C2, src, "enemy script jump attack")
+        choose_command = space.start_address
+
+        space = Reserve(0x21b25, 0x21b27, "enemy script choose command for attack", asm.NOP())
+        space.write(
+            asm.JSR(choose_command, asm.ABS),
+        )
+
+    def command_attacks_mod(self, attacks):
+        # as jump_attack_mod, for more than the jump: {attack value : (command, its argument)}, so
+        # that a script can choose with 0xf0 between its attacks and JUMP: (0x16, 0), or throwing an
+        # item, THROW: (0x08, the item) (script command [0xf6, 0x01, ...] does that)
+        # for the scripts which need it (final_boss/grampaluma.py): not part of mod()
+        CHOOSE_ATTACK_COMMAND = 0x1dbf      # a = command to use the attack in a with, b = the attack
+
+        src = []
+        for index, attack in enumerate(attacks):
+            src += [
+                asm.CMP(attack, asm.IMM8),
+                asm.BEQ(f"COMMAND_{index}"),
+            ]
+        src += [
+            asm.JMP(CHOOSE_ATTACK_COMMAND, asm.ABS),
+        ]
+        for index, (command, argument) in enumerate(attacks.values()):
+            src += [
+                f"COMMAND_{index}",
+                asm.LDA(argument, asm.IMM8),
+                asm.XBA(),
+                asm.LDA(command, asm.IMM8),
+                asm.RTS(),
+            ]
+        space = Write(Bank.C2, src, "enemy script command attacks")
         choose_command = space.start_address
 
         space = Reserve(0x21b25, 0x21b27, "enemy script choose command for attack", asm.NOP())

@@ -7,7 +7,7 @@
 | `kefka` | Kefka, as he is. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
 | `ultimaro` | Ultimaro: a giant Umaro |
 | `uncleulty` | Uncle Ulty: a giant Ultros |
-| `grampaluma` | Grampaluma: a giant Dadaluma who calls in Iron Fists (a prototype: the rest of the battle is final Kefka's) |
+| `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Ultimaro
@@ -34,9 +34,19 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 - Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds everyone it hits. It may also muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
 - Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 110, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
 
-## Grampaluma (prototype)
+## Grampaluma
 
-Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit). His stats and attacks are still final Kefka's, and his script is final Kefka's with what Dadaluma does in Zozo added:
+Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not fit). His stats are final Kefka's, but he can be slowed and hasted. His attacks:
+
+- Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
+- Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you.", and there is no laughing head.
+- Revenger is Time Warp: Slow 2 on the whole party (hit rate 150, which Reflect and Runic do not stop), and Haste for every enemy in the battle, whether it hits or not. An enemy protected from Slow or Haste is protected from both, so he and the ChromeFists are protected from neither.
+- Sweep, Dadaluma's special, is an attack of its own (in the place of Confusion, which nothing in the game uses): a blow on one character, as strong as Tentacle, which saps. It looks like Sonic Boom.
+- He jumps as Ultimaro does (2 to 4 landings), and throws MithrilKnives.
+
+In final Kefka's script: above 53% HP Fire 3 is a thrown MithrilKnife, Ice 3 is HyperDrive and Bolt 3 is Sweep. At 53% and below, after Chi Shock, the Train of the first choice is a thrown MithrilKnife, the Revenger of the third is the jump, and so is one of the two Tiger Claws of the last.
+
+With what Dadaluma does in Zozo added:
 
 - He calls in two ChromeFists when his timer is above 30 (about a minute) and both are dead or gone, as Dadaluma does his Iron Fists. They are not in the battle at its start. When he dies they go with him (final Kefka's script removes every enemy of the formation).
 - Once, below 25% HP: X-Potion, X-Potion or Potion three times (an X-Potion is 9999 HP to him), and Safe.
@@ -44,7 +54,7 @@ Dadaluma at 1.43 times his size (125x80 pixels: he is 88 wide, so twice does not
 
 Final Kefka's script goes around once in 7 turns or more, so these are before turns inside it: the call before every other turn that is not in a condition, the rest before every fourth (the enemy scripts have not the room for all of it before each). The hits are counted where his script answers being hit, after what it does when he dies.
 
-A ChromeFist is an Iron Fist in a dark chrome palette (the Iron Fist's colors by their brightness, as greys), an enemy of its own in the place of one no formation has (382), so Zozo's are as they were. It has 14000 HP, is level 40, and is protected from all statuses but death, as the final boss is from all. Each turn it throws a Dirk (some 1900 to a level 70 character without much armor) or attacks twice (some 400 each), one as likely as the other.
+A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: level 34, speed 37, vigor 10, defense 125, magic defense 145, evade 120, absorbs poison) with 14000 HP, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk or attacks twice, one as likely as the other.
 
 ## How a final boss is made
 
@@ -85,3 +95,4 @@ Rules to keep:
 - `helpers_mod(enemies, helper, positions, boss_position)` puts helpers in his formation, and `helpers_layout_mod(boss_tiles, helper_tiles)` makes the room for their graphics. A formation's monsters share 16x16 tiles of graphics (128x128 pixels) which its mold divides between them, and the final formation's mold gives all of it to one monster: this adds a mold (13) where the boss has the top and the helpers a row under him. The molds, the sprite lists of each mold's monsters, the pointers to both and the sprites themselves are all moved to bank F0 to make room for it (bank C2 has little). In the final battle the monsters are drawn as sprites of 32x32 pixels, which do not divide such a mold, so the code that writes them is taught 16x16 sprites for what is left at the right and bottom of each monster (`_small_sprites_mod`). Not handled: a monster of this mold flipped (the flipped lists assume 32x32 sprites), which the final battle does not do.
 - `helper_enemy_mod(enemies, source, name)` makes the helpers an enemy of their own from another (`HELPER_ENEMY`), and `helper_palette_mod(source, palette)` gives them that enemy's looks in another palette (`monster_palette(enemy)` reads one).
 - `chance_condition_mod()` adds a script condition the game does not have, in the place of one it does not use: `If(CHANCE, n, 0)` is true n times in 256. Conditions are tested as the script is read and variables are set when the turn is taken, so a choice between two blocks is made by a variable set from the chance the turn before (the ChromeFists' script).
+- `party_statuses_mod(data, attack, statuses_byte, statuses)` makes an attack also set statuses on every enemy in the battle. `new_attack_mod(data, attack, source, name, animation_source)` makes an attack nothing uses into a new one. `jump_mod()` and `jump_animation_mod()` are the Dragon Horn jump and its landings. In a script, `JUMP` and `THROW` (`data/enemy_script_custom_commands.py`, `command_attacks_mod`) can be chosen as attacks are.
