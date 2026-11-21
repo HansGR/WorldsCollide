@@ -307,6 +307,9 @@ class EnemyScripts():
         if self.args.random_encounters_chupon:
             self.chupon_sneeze_all()
 
+        import final_boss
+        final_boss.get().scripts_mod(self)
+
         if self.args.ability_scaling:
             self.enemy_script_abilities.scale_abilities_mod()
 

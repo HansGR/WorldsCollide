@@ -83,6 +83,9 @@ class Data:
         self.title_graphics.mod()
 
     def write(self):
+        import final_boss
+        final_boss.get().data_mod(self)
+
         if self.args.steveify:
             import data.text as text
             ability_name_bytes = bytearray()

@@ -80,3 +80,30 @@ print("ok")
 if __name__ == "__main__":
     unittest.main()
 
+class TestFinalBoss(unittest.TestCase):
+    def parse_flags(self, *flags):
+        return subprocess.run(
+            [sys.executable, os.path.join("args", "arguments.py"), "-i", "rom.smc", *flags],
+            cwd = REPO_ROOT,
+            capture_output = True,
+            text = True,
+            timeout = 60,
+        )
+
+    def test_default_is_kefka_and_not_in_flags(self):
+        # the flag string seeds the rng: seeds rolled without -fb must keep theirs
+        for flags in ((), ("-fb", "kefka")):
+            result = self.parse_flags(*flags)
+            self.assertEqual(result.returncode, 0, msg = result.stderr)
+            self.assertNotIn("-fb", result.stdout)
+
+    def test_named_and_random(self):
+        for value in ("ultimaro", "random", "Ultimaro"):
+            result = self.parse_flags("-fb", value)
+            self.assertEqual(result.returncode, 0, msg = result.stderr)
+            self.assertIn(f"-fb {value.lower()}", result.stdout)
+
+    def test_unknown_rejected(self):
+        result = self.parse_flags("-fb", "nobody")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid choice", result.stderr)

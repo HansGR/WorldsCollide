@@ -6,7 +6,10 @@ from constants.battle_addresses import ENEMY_LEVEL
 FIRE0, FIRE1, FIRE2, ICE0, ICE1, ICE2, BOLT0, BOLT1, BOLT2, EARTH0, EARTH1, EARTH2, WIND0, WIND1, WIND2, WATER0, WATER1, WATER2, POISON0, POISON1, POISON2, PEARL0, PEARL1, PEARL2, NON_ELEMENTAL0, NON_ELEMENTAL1, NON_ELEMENTAL2 = range(0x36, 0x51)
 # NOTE: gap in range here to keep original skean/edge/storm argument ids
 CURE0, CURE1, CURE2, TEK0, TEK1, TEK2, DAMAGE0, DAMAGE1, DAMAGE2, SPECIAL0, SPECIAL1, SPECIAL2 = range(0x55, 0x61)
-# NOTE: 0x61 to 0x63 still available
+# NOTE: 0x61 and 0x62 still available
+
+# an attack value (alone or as an 0xf0 argument) which is the jump command, for scripts which call jump_attack_mod
+JUMP = 0x63
 
 def get_custom_ability_tier(category_tier):
     if category_tier >= 0x55:
@@ -56,6 +59,31 @@ class EnemyScriptCommands:
         space = Reserve(0x21bbd, 0x21bc3, "enemy script command 0xfc 0x06 calculate hp threshold", asm.NOP())
         space.write(
             asm.JSR(hp_percent_calculate, asm.ABS),
+        )
+
+    def jump_attack_mod(self):
+        # the attack JUMP is the jump command, as script command [0xf4, 0x16, ...] uses it (umaro's
+        # script), so that a script can choose between jumping and its attacks with 0xf0.
+        # for the scripts which need it (final_boss/ultimaro.py): not part of mod()
+        JUMP_COMMAND = 0x16
+        CHOOSE_ATTACK_COMMAND = 0x1dbf      # a = command to use the attack in a with, b = the attack
+
+        src = [
+            asm.CMP(JUMP, asm.IMM8),
+            asm.BEQ("JUMP"),
+            asm.JMP(CHOOSE_ATTACK_COMMAND, asm.ABS),
+
+            "JUMP",
+            asm.TDC(),                      # no attack
+            asm.LDA(JUMP_COMMAND, asm.IMM8),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "enemy script jump attack")
+        choose_command = space.start_address
+
+        space = Reserve(0x21b25, 0x21b27, "enemy script choose command for attack", asm.NOP())
+        space.write(
+            asm.JSR(choose_command, asm.ABS),
         )
 
     def hp_conditions_mod(self):

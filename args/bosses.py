@@ -1,4 +1,5 @@
 from data.bosses import BossLocations
+import final_boss
 
 
 DEFAULT_DRAGON_PROTOCOL = BossLocations.SHUFFLE
@@ -35,6 +36,9 @@ def parse(parser):
                         help = "Undead status removed from bosses")
     bosses.add_argument("-bmkl", "--boss-marshal-keep-lobos", action = "store_true",
                         help = "Don't replace the Marshal's Lobos with randomized enemies")
+    bosses.add_argument("-fb", "--final-boss", default = final_boss.KEFKA, type = str.lower,
+                        choices = final_boss.NAMES + [final_boss.RANDOM], metavar = "VALUE",
+                        help = "The final boss, at the end of the final battle: %(choices)s. Default: %(default)s")
     bosses.add_argument("-oops", default = None, nargs = "?", const = "random", type = str,
                         help = "Oops, all <boss>! Replace all bosses with the specified boss enemy ID or name, or \"random\".")
 
@@ -119,6 +123,8 @@ def flags(args):
         flags += " -bmkl"
     if args.oops is not None:
         flags += f" -oops {args.oops}"
+    if args.final_boss != final_boss.KEFKA:
+        flags += f" -fb {args.final_boss}"
 
     return flags
 
@@ -152,6 +158,7 @@ def options(args):
         ("Marshal Keep Lobos", args.boss_marshal_keep_lobos, "boss_marshal_keep_lobos"),
         ("Who's There?", args.who_there, "who_there"),
         ("Oops All Boss ID", oops, "oops"),
+        ("Final Boss", args.final_boss.capitalize(), "final_boss"),
     ]
 
 def menu(args):

@@ -24,6 +24,8 @@ EXTRA_FLAGS = [
     "-open",
     "-nfh -cg",
     "-nfh -sli -cg",
+    "-fb ultimaro",
+    "-fb random",
 ]
 
 # builds the real parser, then prints its on/off flags instead of parsing sys.argv

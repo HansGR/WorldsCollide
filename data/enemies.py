@@ -421,6 +421,12 @@ class Enemies():
         elif not self.args.random_encounters_original:
             self.randomize_encounters(maps)
 
+        import final_boss
+        final_boss.get().enemies_mod(self)
+        if self.args.final_boss == final_boss.RANDOM and self.args.spoiler_log:
+            from log import section
+            section("Final Boss", [f"    {final_boss.get().NAME}"], [])
+
         self.formations.mod()
         self.packs.mod()
         self.zones.mod()
