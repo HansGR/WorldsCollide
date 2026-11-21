@@ -3669,6 +3669,7 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 - Doubling a small-mold sprite (up to 64x64) gives 128x128, exactly a large mold. Final Kefka's large mold is his alone, so it can be overwritten. A large-mold source would not fit doubled.
 - `graphics/monster_sprite.py` (final-boss branch): `tile_pixels`/`tile_data` (3 and 4bpp), `sprite_pixels`/`sprite_data` (mold + graphics to pixels and back), `scale`, `without_shadow`.
 - **Shadows** are a patch of the outline color (index 1). Remove the pixels of that color that touch no other color (8 neighbours) and are connected to the outside of the sprite; this keeps the outline and the dark inside. Limiting it to the last rows is only needed if the first rule is not enough.
+- **To put a sprite lower on the screen, move the enemy, not its art.** Shifting the art down inside the large mold (empty tile rows at the top) hung the battle as the last tier appeared. A formation's enemy positions are in its data at `0xf6200 + id * 15`, bytes 8-13, one per enemy: x in the high nibble, y in the low, in steps of 8 pixels (`EnemyFormation.enemy_x_positions`/`enemy_y_positions`). The last tier is formation 0x202, final Kefka at 2, 2 = (16, 16); Uncle Ulty is at y 6.
 - Enemies used: Umaro 272 (64x64). Ultros 300 is the head in the river (54x32); 301, 302 and 360 share the tentacled sprite (64x47).
 
 ### Enemy data and names
@@ -3717,7 +3718,7 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 | Script pointers | `0x11ead8` (D1/EAD8), word per layer animation, into bank D0. Free space in D0: `0x1095e6`-`0x1097ff`, `0x10cf4a`-`0x10cfff`, `0x10fc7a`-`0x10fcff` |
 
 - An animation is mirrored when a monster is the attacker, and frames can flip their tiles: for the laughing head the two cancel, so a picture stored as drawn is seen as drawn.
-- The laughing head: layer animation 0x281, one frame of four 16x16 tiles = 32x32 pixels, layout 0x11c rows 4-7 columns 0-3, tiles 0x1303-0x1310 (14 real tiles and 2 empty: a replacement may fill at most 14 of its 16 8x8 tiles, or use the 4 free tiles). Its palette 0xef is shared with attack animation 50, so give a replacement its own.
+- The laughing head: layer animation 0x281, one frame of four 16x16 tiles = 32x32 pixels, layout 0x11c rows 4-7 columns 0-3, tiles 0x1303-0x1310 (14 real tiles and 2 empty: a replacement that fills more than 14 of its 16 8x8 tiles takes the rest from the 4 free tiles, as the shrimp does). Its palette 0xef is shared with attack animation 50, so give a replacement its own.
 - Layers drawn with additive color (HyperDrive's burst) only get dimmer with a dark palette; they cannot be made black by palette alone.
 
 **Script commands** (main table C1/D9E3 for 0x80 and up; `80 xx` sub-commands at C1/C884):
@@ -3742,8 +3743,9 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 
 ### Battle text
 
-- **One-line texts** (`F3`): about 32 characters fit the box, and the table is nearly full; a 39-character line overflowed it by 12 bytes.
+- **One-line texts** (`F3`): about 32 characters fit the box, and the table is nearly full; a 39-character line overflowed it by 12 bytes. Room comes from emptying texts no script says any more: WC removes Vargas's four lines (0x12, 0x43, 0x0a, 0x42) from his script but leaves their text. Uncle Ulty says two one-line texts in a row (a second `F3` after the first), which is what Hans preferred to the box below.
 - **Multi-line texts** live in another table with a pool of free slots (`data/dialogs/free.py`, `dialogs.allocate_multi_line_battle`). A **battle event** shows them: pointers at `0x109800` (33 events, no room for more), scripts in bank D0; `11` open the window, `01 id` show a text, `10` close, `ff` end. The box is at the bottom of the screen; use `<wait 60 frames>` rather than `<wait for key>`.
+- (Built and tested for Uncle Ulty in `final-boss` commit `2f63c6a`, then reverted in `0cb3f87` by preference: the helper `goner_speech_mod` is in that commit if a later boss wants the big box.)
 - Free battle events are those only a removed enemy called. 0x04 (Tritoch 276; 593 bytes of script) is the one used and tested. Candidates by the same reasoning, not yet checked for other uses of their script space: 0x12 (Tritoch 277), 0x17 (Kefka at Thamasa 371), 0x0e (Officer 373), 0x0f (Merchant 314). Write the new script at the event's existing address and call it with `F7`.
 - Final Kefka's speech when he appears ("Life... Dreams... Hope...") is multi-line texts 245-247, shown by event 0x20. WC keeps it, and every final boss says it.
 
