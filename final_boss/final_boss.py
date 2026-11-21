@@ -66,41 +66,23 @@ class FinalBoss:
             name_bytes += [0xff] * (ABILITY_NAME_SIZE - len(name_bytes))
             data.rom.set_bytes(ABILITY_NAMES_START + (name_id[ability] - FIRST_NAMED_ABILITY) * ABILITY_NAME_SIZE, name_bytes)
 
-    def goner_text_mod(self, data, text):
-        # what is said at the top of the screen before goner ("the end comes...beyond chaos."): one
-        # line of some 32 letters, and the battle's one line texts share a space with little room
-        # for a longer one. goner_speech_mod is for more
-        GONER_TEXT = 140
-        data.dialogs.set_single_line_battle_text(GONER_TEXT, text)
-
-    def goner_speech_mod(self, scripts, text):
-        # what he says before goner, in a box of several lines as final kefka's speech when he
-        # appears: for scripts_mod. the text is one of the battle's free texts of several lines,
-        # and a battle event shows it where his script had the one line text
-        #
-        # the battle events are 33 (D0/9800 has their pointers), each is called from an enemy's
-        # script. event 4 is that of the tritoch of the game's opening, which the randomizer
-        # removed, so nothing calls it and its script (593 bytes) is free
-        import data.dialogs as dialogs
+    def goner_text_mod(self, data, text, room = False):
+        # what is said at the top of the screen before goner ("the end comes...beyond chaos."). the
+        # battle's one line texts share a fixed space: a longer text asks for room, and the four
+        # lines of vargas which the randomizer takes out of his script are emptied
         import data.enemy_script_commands as ai_instr
         GONER_TEXT = 140
-        FREE_EVENT = 0x04
-        EVENT_POINTERS, EVENTS = 0x109800, 0x100000
-        OPEN_WINDOW, SHOW_TEXT, CLOSE_WINDOW, END = 0x11, 0x01, 0x10, 0xff
+        VARGAS_TEXTS = [0x12, 0x43, 0x0a, 0x42]
 
-        speech = dialogs.allocate_multi_line_battle(text)
-
-        pointer = Read(EVENT_POINTERS + FREE_EVENT * 2, EVENT_POINTERS + FREE_EVENT * 2 + 1)
-        event = [OPEN_WINDOW, SHOW_TEXT, speech, CLOSE_WINDOW, END]
-        event_address = EVENTS + (pointer[0] | (pointer[1] << 8))
-        space = Reserve(event_address, event_address + len(event) - 1, "final boss: goner speech battle event")
-        space.write(event)
-
-        script = scripts.get_script(self.ENEMY)
-        said = [index for index, instruction in enumerate(script.instructions) if instruction == ai_instr.Message(GONER_TEXT)]
-        assert len(said) == 2       # at 13% and at 53% hp
-        for index in said:
-            script.instructions[index] = ai_instr.Event(FREE_EVENT)
+        data.dialogs.set_single_line_battle_text(GONER_TEXT, text)
+        if room:
+            for script in data.enemies.scripts.scripts:
+                if script.id == self.enemy_id:
+                    continue                # (the final boss may say them himself, with another text)
+                for said in VARGAS_TEXTS:
+                    assert ai_instr.Message(said) not in script.instructions, f"battle text {said} is in use"
+            for unsaid in VARGAS_TEXTS:
+                data.dialogs.set_single_line_battle_text(unsaid, "<end>")
 
     def add_palette(self, colors):
         # a battle animation palette of these 8 colors (15 bit), and its number
