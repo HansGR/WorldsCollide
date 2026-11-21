@@ -146,9 +146,15 @@ class EnemyScriptCommands:
                       ability_tiers.wind, ability_tiers.water, ability_tiers.poison, ability_tiers.pearl,
                       ability_tiers.non_elemental, ability_tiers.cure, ability_tiers.tek, ability_tiers.damage]
 
+        # the attacks a final boss other than kefka makes its own are not in the tiers
+        import final_boss
+        own_abilities = [name_id[name] for name in final_boss.get().OWN_ABILITIES]
+
         tier_addresses = []
         for category in categories:
             for tier in category:
+                tier = [ability for ability in tier if ability not in own_abilities]
+                assert tier, "an ability tier is empty"
                 tier_addresses.append(space.next_address)
                 space.write(tier)
         tier_addresses.append(space.next_address)

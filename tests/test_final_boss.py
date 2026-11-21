@@ -8,6 +8,19 @@ class TestFinalBosses(unittest.TestCase):
         self.assertEqual(final_boss.NAMES[0], final_boss.KEFKA)
         self.assertIs(final_boss._FINAL_BOSSES[final_boss.KEFKA](), FinalBoss)
         self.assertEqual(FinalBoss.LEVELS, 0)
+        self.assertEqual(FinalBoss.OWN_ABILITIES, ())
+
+    def test_own_abilities_leave_no_tier_empty(self):
+        # the attacks a final boss makes its own are taken out of the ability scaling tiers
+        import data.enemy_ability_tiers as tiers
+        from data.spell_names import name_id
+        categories = [tiers.fire, tiers.ice, tiers.bolt, tiers.earth, tiers.wind, tiers.water, tiers.poison,
+                      tiers.pearl, tiers.non_elemental, tiers.cure, tiers.tek, tiers.damage]
+        for name in final_boss.NAMES:
+            own = [name_id[ability] for ability in final_boss._FINAL_BOSSES[name]().OWN_ABILITIES]
+            for category in categories:
+                for tier in category:
+                    self.assertTrue([ability for ability in tier if ability not in own])
 
     def test_names(self):
         # the names are -fb values: lower case, and none is the value for a random one

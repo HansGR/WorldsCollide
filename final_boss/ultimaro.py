@@ -16,6 +16,7 @@ class Ultimaro(FinalBoss):
     #   Revenger    Enrager: the bserk spell on the whole party
     NAME = "Ultimaro"
     LEVELS = 5
+    OWN_ABILITIES = ("HyperDrive", "Goner")
     SPEED = 1.2
 
     UMARO = "Umaro"

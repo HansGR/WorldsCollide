@@ -29,6 +29,11 @@ class FinalBoss:
 
     LEVELS = 0              # levels above what final kefka's would be in the battle (battle/load_enemy_level.py)
 
+    # the attacks only final kefka has which this final boss changes: no other enemy gets them from
+    # ability scaling (data/enemy_script_custom_commands.py), and his own are not scaled into others
+    # with -sfb (data/enemy_script_abilities.py)
+    OWN_ABILITIES = ()
+
     def __init__(self):
         from data.bosses import name_enemy
         self.enemy_id = name_enemy[self.ENEMY]
