@@ -68,8 +68,11 @@ class Grampaluma(FinalBoss):
         grampaluma.special_name = self.SPECIAL_NAME
         grampaluma.speed = min(round(grampaluma.speed * self.SPEED), 2 ** 8 - 1)
         grampaluma.vigor = round(grampaluma.vigor * self.VIGOR)
-        grampaluma.weak_elements |= self.POISON         # as dadaluma is (he is protected from the status)
-        assert grampaluma.status_immunities.poison and not (grampaluma.absorb_elements | grampaluma.immune_elements) & self.POISON
+        # weak to poison as dadaluma is: final kefka takes no damage from it. (he is still protected
+        # from the poison status)
+        grampaluma.immune_elements &= ~self.POISON
+        grampaluma.weak_elements |= self.POISON
+        assert grampaluma.status_immunities.poison and not grampaluma.absorb_elements & self.POISON
         # for time warp: an enemy protected from slow or haste is protected from both
         grampaluma.status_immunities.haste = 0
         grampaluma.status_immunities.slow = 0
