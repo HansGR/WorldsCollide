@@ -599,6 +599,71 @@ class FinalBoss:
         Reserve(pointer, pointer + 1, "final boss: status chance pointer").write(
             list((space.start_address & 0xffff).to_bytes(2, "little")))
 
+    def attack_special_animation_mod(self, attack, enemy):
+        # the other way around: an attack of his looks and sounds like the special attack of this
+        # enemy (the blow a monster's special is shown with, a byte for each enemy), and is otherwise
+        # what it was: when the battle queues the attack's animation, it queues that of a special
+        # x = the attacker (8 and up are the enemies). 8 bit a, x and y
+        QUEUE_ANIMATION_START, QUEUE_ANIMATION_END = 0x23414, 0x23416
+        QUEUE_ANIMATION = 0x35ad
+        SPECIAL_ATTACK_GRAPHICS = 0xf37c0       # a byte for each enemy
+        FIGHT_COMMAND, SPECIAL_ATTACK = 0x00, 0xef
+        SPECIAL_FLAG = 0x01
+
+        command, command_attack, graphic, flags = 0xb5, 0xb6, 0xb7, 0xa0
+        enemy_ids = 0x33a8
+        first_enemy = 8
+
+        src = [
+            asm.LDA(command_attack, asm.DIR),
+            asm.CMP(attack, asm.IMM8),
+            asm.BNE("AS_IT_IS"),
+            asm.CPX(first_enemy, asm.IMM8),
+            asm.BLT("AS_IT_IS"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_X),
+            asm.CMP(self.enemy_id, asm.IMM16),
+            asm.A8(),                               # (keeps the zero flag)
+            asm.BNE("AS_IT_IS"),
+
+            asm.LDA(command, asm.DIR),
+            asm.PHA(),
+            asm.LDA(command_attack, asm.DIR),
+            asm.PHA(),
+            asm.LDA(graphic, asm.DIR),
+            asm.PHA(),
+            asm.LDA(flags, asm.DIR),
+            asm.PHA(),
+            asm.ORA(SPECIAL_FLAG, asm.IMM8),
+            asm.STA(flags, asm.DIR),
+            asm.LDA(FIGHT_COMMAND, asm.IMM8),
+            asm.STA(command, asm.DIR),
+            asm.LDA(SPECIAL_ATTACK, asm.IMM8),
+            asm.STA(command_attack, asm.DIR),
+            asm.LDA(Read(SPECIAL_ATTACK_GRAPHICS + enemy, SPECIAL_ATTACK_GRAPHICS + enemy)[0], asm.IMM8),
+            asm.STA(graphic, asm.DIR),
+            asm.JSR(QUEUE_ANIMATION, asm.ABS),
+            asm.PLA(),
+            asm.STA(flags, asm.DIR),
+            asm.PLA(),
+            asm.STA(graphic, asm.DIR),
+            asm.PLA(),
+            asm.STA(command_attack, asm.DIR),
+            asm.PLA(),
+            asm.STA(command, asm.DIR),
+            asm.RTS(),
+
+            "AS_IT_IS",
+            asm.JMP(QUEUE_ANIMATION, asm.ABS),
+        ]
+        space = Write(Bank.C2, src, "final boss: attack with a special attack's animation")
+        queue_animation = space.start_address
+
+        space = Reserve(QUEUE_ANIMATION_START, QUEUE_ANIMATION_END, "queue attack animation", asm.NOP())
+        space.write(
+            asm.JSR(queue_animation, asm.ABS),
+        )
+
     def special_attack_animation_mod(self, attack):
         # his special attack (havoc wing) looks and sounds like this attack, one the lore command
         # animates (0x8b and up: the enemies' own), and is otherwise what it was: when the battle

@@ -29,7 +29,6 @@ class Grampaluma(FinalBoss):
     }
     GONER_TEXT = "Friends! Lovely to see you.<wait 60 frames><end>"
     SWEEP = "Confusion"                     # an attack no script, sketch, control or rage uses: his sweep
-    SWEEP_LOOKS = "Sonic Boom"
     TIME_WARP_HIT_RATE = 150                # slow 2's
 
     ONE_TARGET = 0x41                       # an attack's targets (its first byte): one, of the other side
@@ -202,7 +201,7 @@ class Grampaluma(FinalBoss):
         self.party_statuses_mod(data, name_id["Revenger"], self.HASTE_BYTE, self.HASTE)
 
         # sweep, dadaluma's special: a blow which saps (tentacle is the enemies' one attack that is a blow)
-        sweep = self.new_attack_mod(data, name_id[self.SWEEP], name_id["Tentacle"], "Sweep", name_id[self.SWEEP_LOOKS])
+        sweep = self.new_attack_mod(data, name_id[self.SWEEP], name_id["Tentacle"], "Sweep")
         status = sweep + self.SEIZURE_BYTE
         data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.SEIZURE])
         data.rom.set_bytes(sweep, [self.ONE_TARGET])
@@ -230,6 +229,8 @@ class Grampaluma(FinalBoss):
         self.helper_palette_mod(self.iron_fist_id, self.chrome(self.monster_palette(self.iron_fist_id)))
         self.helpers_layout_mod(self.TILES, self.HELPER_TILES, len(self.HELPER_POSITIONS))
         self.chance_condition_mod()
+        from data.spell_names import name_id
+        self.attack_special_animation_mod(name_id[self.SWEEP], dadaluma)    # sweep looks like dadaluma's
         self.jump_mod()
         self.jump_animation_mod()
 
