@@ -39,7 +39,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's, but he can be slowed and hasted. His attacks:
 
 - Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
-- Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you.", and there is no laughing head.
+- Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you." and charges up as final Kefka does, without the laughing head (it is replaced by an empty picture).
 - Revenger is Time Warp: Slow 2 on the whole party (hit rate 150, which Reflect and Runic do not stop), and Haste for every enemy in the battle, whether it hits or not. An enemy protected from Slow or Haste is protected from both, so he and the ChromeFists are protected from neither.
 - Sweep, Dadaluma's special, is an attack of its own (in the place of Confusion, which nothing in the game uses): a blow on one character, as strong as Tentacle, which saps. It looks like Sonic Boom.
 - He jumps as Ultimaro does (2 to 4 landings), and throws MithrilKnives.

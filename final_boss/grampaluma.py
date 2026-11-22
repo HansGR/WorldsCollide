@@ -165,11 +165,6 @@ class Grampaluma(FinalBoss):
         script.replace(ai_instr.RandomAttack(special, special, nothing),
                        ai_instr.RandomAttack(special, JUMP, nothing))
 
-        # no laughing head before chi shock
-        head = ai_instr.Animate(0x0a, 0x01, 0x00)
-        script.remove(head, count = 2)
-
-
         entrance_end = instructions.index(ai_instr.EndIf())
         script.insert(entrance_end + 1, call + heal_and_throw)
 
@@ -228,3 +223,8 @@ class Grampaluma(FinalBoss):
         self.chance_condition_mod()
         self.jump_mod()
         self.jump_animation_mod()
+
+        # he charges up before chi shock as final kefka does before goner, without the laughing head:
+        # it is a picture of nothing
+        HEAD_PIXELS, PALETTE_COLORS = 32, 8
+        self.goner_sprite_mod([[0] * HEAD_PIXELS for _ in range(HEAD_PIXELS)], [0] * PALETTE_COLORS)
