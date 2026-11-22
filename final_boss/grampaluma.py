@@ -12,6 +12,7 @@ class Grampaluma(FinalBoss):
     # a chromefist is an iron fist in chrome with 3500 hp: each turn it throws a dirk or attacks
     # twice, one as likely as the other
     NAME = "Grampaluma"
+    SPEED = 1.2                             # a fifth faster than final kefka, at his level
 
     DADALUMA = "Dadaluma"
     HELPER = "Scrapper"                     # the highest of the enemies with the iron fist's looks: his stats
@@ -62,6 +63,7 @@ class Grampaluma(FinalBoss):
         grampaluma = self.enemy(enemies)
         grampaluma.name = self.NAME
         grampaluma.special_name = self.SPECIAL_NAME
+        grampaluma.speed = min(round(grampaluma.speed * self.SPEED), 2 ** 8 - 1)
         # for time warp: an enemy protected from slow or haste is protected from both
         grampaluma.status_immunities.haste = 0
         grampaluma.status_immunities.slow = 0

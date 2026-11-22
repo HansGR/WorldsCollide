@@ -36,7 +36,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ## Grampaluma
 
-Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's, but he can be slowed and hasted. His attacks:
+Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's (and his level), but he is a fifth faster and can be slowed and hasted. His attacks:
 
 - Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
 - Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you." and charges up as final Kefka does, without the laughing head (it is replaced by an empty picture).
