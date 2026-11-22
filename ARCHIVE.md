@@ -11,6 +11,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 ### FF6 Internals (vanilla reference)
 - [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
 - [Final Bosses, Monster Sprites, Battle Animations & Palettes (2026-11)](#final-bosses-monster-sprites-battle-animations--palettes-2026-11) (monster graphics and molds, attack data and hit chance, battle animation data and script commands, palettes, battle text and events, how a strike is resolved; code on `final-boss`)
+- [Final Boss Helpers, Formation Molds, and How Enemy Scripts Are Read (2026-11)](#final-boss-helpers-formation-molds-and-how-enemy-scripts-are-read-2026-11) (enemy scripts as priority lists of blocks, script conditions and variables, helpers in a formation, molds and monster sprites, new attacks and enemies, status rules; code on `final-boss`)
 - [FF6 Text Encoding Types](#ff6-text-encoding-types)
 - [Battle MP Zeroing & MP-Drain Criticals (2026-08)](#battle-mp-zeroing--mp-drain-criticals-2026-08)
 - [Battle Command-Menu Cursor Engine & the All-Invalid Hardlock (2026-08)](#battle-command-menu-cursor-engine--the-all-invalid-hardlock-2026-08)
@@ -3669,7 +3670,7 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 - Doubling a small-mold sprite (up to 64x64) gives 128x128, exactly a large mold. Final Kefka's large mold is his alone, so it can be overwritten. A large-mold source would not fit doubled.
 - `graphics/monster_sprite.py` (final-boss branch): `tile_pixels`/`tile_data` (3 and 4bpp), `sprite_pixels`/`sprite_data` (mold + graphics to pixels and back), `scale`, `without_shadow`.
 - **Shadows** are a patch of the outline color (index 1). Remove the pixels of that color that touch no other color (8 neighbours) and are connected to the outside of the sprite; this keeps the outline and the dark inside. Limiting it to the last rows is only needed if the first rule is not enough.
-- **To put a sprite lower on the screen, move the enemy, not its art.** Shifting the art down inside the large mold (empty tile rows at the top) hung the battle as the last tier appeared. A formation's enemy positions are in its data at `0xf6200 + id * 15`, bytes 8-13, one per enemy: x in the high nibble, y in the low, in steps of 8 pixels (`EnemyFormation.enemy_x_positions`/`enemy_y_positions`). The last tier is formation 0x202, final Kefka at 2, 2 = (16, 16); Uncle Ulty is at y 6.
+- **A sprite can sit lower in its mold, if no tile row above it is empty.** The battle takes a monster's height to be the rows of its mold before the first empty one (C1/21BE), so a mold with an empty first row gives height 0 and hangs the battle. Keep one blank tile in each empty row above the sprite (`sprite_data(pixels, no_empty_rows = True)`, `giant_sprite_mod(..., lower = pixels)`). Moving the enemy in the formation also works (`0xf6200 + id * 15`, bytes 8-13: x high nibble, y low, steps of 8 pixels; the last tier is formation 0x202, final Kefka at (2, 2)), but it moves the death animation with it.
 - Enemies used: Umaro 272 (64x64). Ultros 300 is the head in the river (54x32); 301, 302 and 360 share the tentacled sprite (64x47).
 
 ### Enemy data and names
@@ -3684,7 +3685,8 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 ### Enemy scripts
 
 - Pointers `0xf8400` (word per enemy), scripts from `0xf8700`. Two sections, each ended by `FF`: the turn loop, then the counterattacks.
-- `F0 a b c` one of three attacks, `F1 t` target (36 self, 43 all characters, 47 default), `F3 lo hi` one-line text, `F4` one of three commands, `F7 n` battle event, `F9 op var bit` variable, `FA` monster animation (`FA 0A` is the laughing head), `FC` condition (`FC 06 36 n` HP, a percentage in WC; `FC 15` bit clear; `FC 12` killed; `FC 05` damaged), `FD` wait a turn, `FE` end if, anything else an attack.
+- **Read "How an enemy script is read" in the Grampaluma section below before editing one**: a script is a priority list of blocks, not a sequence.
+- `F0 a b c` one of three attacks, `F1 t` target (36 self, 43 all characters, 47 default), `F3 lo hi` one-line text, `F4` one of three commands, `F7 n` battle event, `F9 op var bit` variable, `FA` monster animation (`FA 0A 01 00` before Goner is both the screen shaking as he charges and the laughing head: to lose the head, keep it and replace the head's picture with an empty one), `FC` condition (`FC 06 36 n` HP, a percentage in WC; `FC 15` bit clear; `FC 12` killed; `FC 05` damaged), `FD` wait a turn, `FE` end if, anything else an attack.
 - Attack id to command is the table at C2/1DBF: 0x8b-0xed are "Lore" (0x0c), 0xee Battle and 0xef Special are Fight.
 - **Jump for any enemy** (`data/enemy_script_custom_commands.py`, `JUMP = 0x63`, installed only when asked): a routine replacing `JSR $1DBF` at `0x21b25` returns the jump command (0x16) for that value, so `F0` can choose it. Dragon Horn is `LDA $3C44,X : BPL` at C2/1820; extra landings in `$3A70`, `$3A8E` = FF while continuous.
 - Final Kefka: at or below 13% and 53% HP the Goner sequence (text, head, Goner); counters below 17% (Ultima) and 49% (HyperDrive).
@@ -3762,3 +3764,54 @@ Learned building Ultimaro and Uncle Ulty. The code is not on this branch: `umaro
 
 - Keep art as a grid of characters in a Python module (`graphics/green_cherry.py`, `graphics/shrimp.py`): hand-editable, no Pillow at build time.
 - FF6's sprites are more muted than they look: mid-tones run 40-55% saturation. A first draft at 65% read as too bright next to the battle; an olive at about 70% of that sat right.
+
+## Final Boss Helpers, Formation Molds, and How Enemy Scripts Are Read (2026-11)
+
+Learned building Grampaluma (`-fb grampaluma` on `final-boss`: a 1.21x Dadaluma who calls in two ChromeFists), and balancing all three bosses with a playtester. `final_boss/README.md` on that branch has the current battle programs. Addresses are ROM offsets unless written `Cx/xxxx`.
+
+### How an enemy script is read (I had this wrong for a while)
+
+A script section is **blocks**, each ended by `FE` (EndIf) or the section's `FF`. Each turn the game reads from the top and runs **the first block whose `FC` conditions are all true**; a block with no condition is always true. The turn ends at the block's `FE`/`FF`, or at an `FD` (EndTurn) inside it.
+
+- An `FD` leaves a bookmark: the next turn, when the reader reaches that block again (its conditions are tested again), it jumps to after the `FD`. So "a rotation" is one unconditional block full of `FD`s, and an HP phase is one conditional block above it. At 53% and below final Kefka therefore repeats his Goner block and never reaches the rotation under it.
+- **Blocks above the bookmarked one are still tested every turn.** That is the place for "interrupts" (Dadaluma's call, a once-only heal).
+- **A block that runs to its `FE` clears the bookmark**: the script below starts over (for final Kefka: Fallen One again). To do something and let the script go on where it was, end the block with a condition that is never true: the commands before it have run, the failed condition skips to the `FE`, and reading continues with the next blocks in the same turn. Grampaluma's call, heal, thrown Wing Edge and hit counter all end with `If(CHANCE, 0, 0)`.
+- **Never put an `FE` in the middle of an unconditional rotation.** I inserted conditional blocks between final Kefka's turns: that split the rotation into several unconditional blocks, and the first of them wins every time its bookmark is not the current one. He did three turns and started over.
+- Conditions are tested as the script is read; commands (`F8`/`F9` variable changes included) are queued and run when the turn is taken. A variable set in a block is not seen by a later condition in the same turn.
+- The counterattack section is read the same way, with its own bookmark.
+- Conditions used (`FC n a b`, table C2/1D55): 01 hit by command a or b, 05 damaged, 06 HP of target a below b (percent in WC), 08/09 target has / lacks status b, 0B own timer above a (in WC about 2 seconds a unit: 30 is a minute), 0C/0D variable a below / at least b, 12 enemies a (bit mask) dead or absent, 13 count of characters or monsters, 14/15 bit b of variable a set / clear. **0A is unused**: `chance_condition_mod` makes it "true a times in 256".
+- Variables: below 0x24 they are the battle's (`$3EB0,X`), 0x24 and up are all the same one byte of the monster's own (`$3DAC,Y`). Final Kefka uses 0 (bits 0 and 1) and 0x24.
+- `F8 var value`: top two bits 00/01 set, 10 add, 11 subtract. `F9 op var bit`: 0 toggle, 1 set, 2 clear. `FB 00 00` resets the monster's timer (at once, as it is read). `F5 anim 00 mask` brings enemies in, `F5 anim 01 mask` removes them. `F6 00|01 a b` uses or throws an item: a twice as likely as b. `FA 09 40 B8` is Dadaluma's whistle.
+- A script can choose a command where it chooses attacks: `command_attacks_mod({value: (command, argument)})` (`JUMP` = 0x63 is (0x16, 0), `THROW` = 0x64 is (0x08, item)).
+- **The enemy scripts have about 250 bytes free.** Test builds with heavy flags (`-ase 2 -sfb -be -dgne -wnz -mmnu -cmd -bbr`).
+
+### Helpers in the final battle
+
+- A formation (`0xf6200 + id * 15`) has six enemy slots: byte 0 high nibble is the mold, byte 1 which slots are present at the start, bytes 2-7 the enemies, 8-13 their positions, 14 the high bits of the ids. An enemy listed but not present is brought in by the script (`F5`), as Dadaluma's Iron Fists are.
+- **A formation's monsters share 16x16 tiles of graphics** (128x128 pixels; buffer at `$7E:AE3F`, 0x20 bytes a tile). A mold (pointers at C2/D01A, 13 of them, data at C2/D034) gives each slot a rectangle: a word (row * 16 + column) * 0x20, then width and height in tiles. The final tier's mold 6 gives everything to one monster. There is no room for a 14th pointer.
+- A second table by mold (C2/C4A4, six pointers each; lists at C2/C540 on, **read one after the other from the first pointer**) lists each slot's **32x32 sprites**: an x, y origin, then indexes into 4-byte entries at C2/B9E7 (x, y, first tile, 01). The first sprite's tile is also where the monster's tiles start when it is drawn on the background.
+- **In the final battle the monsters are drawn as sprites, not on the background** (the tilemap at `$7E:A97F` is empty). A rectangle that is not a multiple of 32 pixels shows its neighbour's tiles. The code at C1/39AC and C1/39C0 gives every monster sprite the large size bit (`$A37F,X`; `$A57F,X` with the high x bit): `_small_sprites_mod` hooks both so that flagged sprites are 16x16 (the battle's sprite sizes are 16 and 32). A monster's list holds at most 16 sprites.
+- `helpers_layout_mod` adds mold 13: the boss on top, the helpers in a row under him. It moves the molds, the sprite lists, both pointer tables and the sprite entries to bank F0 (bank C2 runs out with some flags) and patches the `LDA #$C2` and long addresses that read them (C1/20C6, C1/20D1, C1/2540, C1/254A, C1/3E97, C1/3E9D, C1/3EA3, C1/3EC6 on). The boss gets no sprite where his picture is empty.
+- **Sprites per line are the limit.** A boss 125 pixels wide plus two helpers and the party made the screen flicker; 107 wide, with the last column as 16x16 sprites, is much better. Ask the playtester: screenshots do not show flicker.
+- A new enemy for the helpers goes in an enemy no formation has (367, 372, 380, 382 are unused and unnamed): copy another's fields, write its script, and point its graphics spec at the same graphics with another palette. Monster palettes 603-767 are unused (`0x127820 + n * 16`, zeros). Final Kefka's script already removes every enemy when he dies (`F5 11 01 FF`), so helpers do not block the ending.
+- Enemies with the Iron Fist's looks: Brawler 11 (level 9), Iron Fist 108 (15), Scrapper 197 (34). Dadaluma 263 is a large-mold sprite, 88x56: twice does not fit 128, 16/11 is the most.
+
+### Attacks and statuses
+
+- **A monster's "vigor" (enemy data byte 1) is the power of its blows**: it scales Battle, its special and Jump. An attack with its own power (a Lore-range attack like the new Sweep) is not changed by it.
+- A monster has one special. A second "special-like" attack needs an attack slot: **only Confusion (170) and Clear (164) are used by nothing** (no script, Sketch, Control, Rage, Lore, Dance or scaling tier). "Reflect???" (151) and "L? Pearl" (152) are Lores, and `lores.write()` overwrites them after `data_mod`. Heart Burn (217) is in the ability scaling tiers. Ids of 0xF0 and up cannot be script attacks.
+- To make such an attack look like an enemy's special (Dadaluma's Sweep), queue its animation as a Fight with attack 0xEF, graphic `$B7` = that enemy's byte at `0xf37c0`, and bit 0 of `$A0` set (`attack_special_animation_mod`, at the `JSR $35AD` at C2/3414).
+- Tentacle (208) is the only enemy attack flagged physical; it is the base for a new blow. Its targets byte 0x6a hits the whole party: 0x41 is one target.
+- **An enemy protected from Slow or Haste is protected from both** (C2/26C3), as Regen and Seizure are. Hasting a boss means clearing both immunities, so he can be slowed too.
+- Special effects: the attack's effect byte (9) indexes two tables, once per target hit (C2/3DCD) and once per strike (C2/42E1). 0x45 is free in both. Status-to-set bytes (`$3DD4`, `$3DD5`, `$3DE8`, `$3DE9`,X) are applied to every entity after a strike, so a per-strike effect can haste the enemies (`party_statuses_mod`) and a per-target one can roll a second status with its own hit rate (`status_chance_mod`). Blocked statuses are `$331C`/`$3330`,X, stored inverted (1 = can get it).
+- An X-Potion heals a monster 9999, a Potion 250.
+- Final Kefka nullifies the poison element (enemy data byte 24): a weakness needs that bit cleared as well as the weak bit set.
+- With `-fb`, HyperDrive and Goner are taken out of the ability scaling tiers (`final_boss.own_abilities()`), even when a random final boss is Kefka, so that other enemies' attacks do not give the boss away.
+
+### Process
+
+- **A failed check must stop the commit.** I chained build, tests and `git commit` with `;` and pushed a commit that did not build (the next one fixed it). Use `&&` or `set -e`.
+- Keep reference ROMs and `cmp` them after every refactor: the default build and each other boss must stay byte-identical when one boss changes.
+- Testing a script in the emulator with an idle party is slow (a turn is 600-900 frames). A scratch driver that imports `wc`, wraps the boss's `scripts_mod` and replaces his main block with the attacks to see, one a turn, shows each in a minute.
+- When logging enemy state, enemies are entities 8, 10, 12 (`$3EF8 + 8 + 2 * n`), not 16 on.
+- Testing seeds for a playtester: the debug driver (not in the repository) plus `-stl 45`, starting items by `-si id.min.max...`, and `equipable_characters |= 0x3fff` for the gear to compare.
