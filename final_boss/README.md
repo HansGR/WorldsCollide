@@ -30,7 +30,7 @@ Umaro at twice the size of his sprite (without the shadow under his feet: he is 
 
 ### Battle program
 
-**Below 13% HP, once:**
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
 1. "Yeti used a Green Cherry!", and he charges up as a green cherry appears
 2. U'ghaaaa
 3. Meteor
@@ -73,7 +73,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ### Battle program
 
-**Below 13% HP, once:**
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
 1. "Gwee-hee-hee...", "It's my special recipe!", and he charges up as a shrimp appears
 2. Gumbo
 3. Meteor
@@ -121,7 +121,7 @@ Dadaluma, in purple pants (the strong reds, oranges and yellows of his palette i
 - Once, below 25% HP: X-Potion or Potion (2 in 3 / 1 in 3) three times, then Safe on himself.
 - Once, when he has been hit by Fight four times: he throws a Wing Edge at a random character.
 
-**Below 13% HP, once:**
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
 1. "Friends! Lovely to see you.", and he charges up
 2. Chi Shock
 3. Meteor
