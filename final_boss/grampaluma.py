@@ -13,7 +13,7 @@ class Grampaluma(FinalBoss):
     # twice, one as likely as the other
     NAME = "Grampaluma"
     SPEED = 1.2                             # a fifth faster than final kefka, at his level
-    VIGOR = 0.9                             # and a tenth less strong
+    VIGOR = 0.8                             # and a fifth less strong (a monster's vigor is the power of its blows)
 
     DADALUMA = "Dadaluma"
     HELPER = "Scrapper"                     # the highest of the enemies with the iron fist's looks: his stats
@@ -31,7 +31,7 @@ class Grampaluma(FinalBoss):
     SWEEP = "Confusion"                     # an attack no script, sketch, control or rage uses: his sweep
     TIME_WARP_HIT_RATE = 150                # slow 2's
 
-    POWER_BYTE, SWEEP_POWER = 6, 0.5        # in an attack's data; sweep has half of tentacle's power
+    POWER_BYTE, SWEEP_POWER = 6, 0.44       # in an attack's data; sweep has this much of tentacle's power
     ONE_TARGET = 0x41                       # an attack's targets (its first byte): one, of the other side
     SEIZURE_BYTE, SEIZURE = 11, 0x40        # in an attack's data: the second status byte (sap)
     HASTE_BYTE, HASTE = 2, 0x08             # the third status byte
@@ -49,6 +49,7 @@ class Grampaluma(FinalBoss):
 
     CALL_TIME = 30                          # he calls them when they are gone and his timer is above this
     CALL_ANIMATION = 3
+    WHISTLE = 0xb8                          # sound effect
     HEAL_HP = 25                            # percent (data/enemy_script_custom_commands.py)
     HITS = 4                                # by the fight command, before the wing edge
 
@@ -115,6 +116,7 @@ class Grampaluma(FinalBoss):
             ai_instr.If(0x0b, self.CALL_TIME, 0x00),    # if his timer is above this
             ai_instr.Misc(0x00, 0x00),                  # reset his timer
             ai_instr.If(0x12, HELPERS, 0x00),           # if the helpers are dead or not in the battle
+            ai_instr.Animate(0x09, 0x40, self.WHISTLE),     # he whistles, as dadaluma does
             ai_instr.ChangeEnemies(self.CALL_ANIMATION, 0x00, HELPERS),     # bring them in
             never,
             ai_instr.EndIf(),
