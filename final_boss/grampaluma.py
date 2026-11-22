@@ -13,13 +13,14 @@ class Grampaluma(FinalBoss):
     # twice, one as likely as the other
     NAME = "Grampaluma"
     SPEED = 1.2                             # a fifth faster than final kefka, at his level
+    VIGOR = 0.9                             # and a tenth less strong
 
     DADALUMA = "Dadaluma"
     HELPER = "Scrapper"                     # the highest of the enemies with the iron fist's looks: his stats
     HELPER_LOOKS = "Iron Fist"
     HELPER_NAME = "ChromeFist"
     HELPER_HP = 3500
-    HELPER_LEVEL, HELPER_VIGOR, HELPER_EVADE = 40, 14, 60       # the scrapper's are 34, 10 and 120
+    HELPER_LEVEL, HELPER_VIGOR, HELPER_EVADE = 38, 14, 60       # the scrapper's are 34, 10 and 120
 
     SPECIAL_NAME = "Tiger Claw"             # was havoc wing
     ABILITY_NAMES = {
@@ -64,6 +65,7 @@ class Grampaluma(FinalBoss):
         grampaluma.name = self.NAME
         grampaluma.special_name = self.SPECIAL_NAME
         grampaluma.speed = min(round(grampaluma.speed * self.SPEED), 2 ** 8 - 1)
+        grampaluma.vigor = round(grampaluma.vigor * self.VIGOR)
         # for time warp: an enemy protected from slow or haste is protected from both
         grampaluma.status_immunities.haste = 0
         grampaluma.status_immunities.slow = 0
@@ -151,21 +153,26 @@ class Grampaluma(FinalBoss):
         special, train, revenger, nothing = (name_id[name] for name in ["Special", "Train", "Revenger", "Nothing"])
         sweep, hyperdrive = name_id[self.SWEEP], name_id["HyperDrive"]
 
-        # above 53% hp, every other turn
+        # above 53% hp: fallen one, then six turns
+        battle_turn = ai_instr.RandomAttack(name_id["Battle"], nothing, special)
+        first = instructions.index(battle_turn)
+        instructions[first] = ai_instr.RandomAttack(name_id["Battle"], nothing, sweep)     # the first of three
         script.replace(ai_instr.RandomAttack(name_id["Fire 3"], train, special),
                        ai_instr.RandomAttack(THROW, train, special))
         script.replace(ai_instr.RandomAttack(name_id["Ice 3"], train, special),
-                       ai_instr.RandomAttack(hyperdrive, train, special))
+                       ai_instr.RandomAttack(hyperdrive, train, sweep))
         script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special),
                        ai_instr.RandomAttack(sweep, nothing, special))
 
-        # at 53% hp and below, the turns after goner (chi shock; revenger is time warp)
+        # at 53% hp and below, the two turns after goner (chi shock; revenger is time warp)
         script.replace(ai_instr.RandomAttack(special, train, revenger),
                        ai_instr.RandomAttack(special, THROW, revenger))
+        script.replace(ai_instr.RandomAttack(special, nothing, nothing),
+                       ai_instr.RandomAttack(sweep, nothing, nothing))
         script.replace(ai_instr.RandomAttack(train, special, revenger),
                        ai_instr.RandomAttack(train, special, JUMP))
         script.replace(ai_instr.RandomAttack(special, special, nothing),
-                       ai_instr.RandomAttack(special, JUMP, nothing))
+                       ai_instr.RandomAttack(THROW, sweep, nothing))
 
         entrance_end = instructions.index(ai_instr.EndIf())
         script.insert(entrance_end + 1, call + heal_and_throw)

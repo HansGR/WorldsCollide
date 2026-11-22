@@ -36,7 +36,7 @@ Ultros (the one with all his tentacles) at twice the size of his sprite, without
 
 ## Grampaluma
 
-Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's (and his level), but he is a fifth faster and can be slowed and hasted. His attacks:
+Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's (and his level), but he is a fifth faster, has a tenth less vigor and can be slowed and hasted. His attacks:
 
 - Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
 - Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you." and charges up as final Kefka does, without the laughing head (it is replaced by an empty picture).
@@ -44,7 +44,10 @@ Dadaluma at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that 
 - Sweep, Dadaluma's special, is an attack of its own (in the place of Confusion, which nothing in the game uses): a blow on one character, as strong as Tentacle, which saps. It looks like Sonic Boom.
 - He jumps as Ultimaro does (2 to 4 landings), and throws MithrilKnives.
 
-In final Kefka's script: above 53% HP Fire 3 is a thrown MithrilKnife, Ice 3 is HyperDrive and Bolt 3 is Sweep. At 53% and below, after Chi Shock, the Train of the first choice is a thrown MithrilKnife, the Revenger of the third is the jump, and so is one of the two Tiger Claws of the last.
+In final Kefka's script, where a turn is one of three things, each as likely:
+
+- Above 53% HP, after Fallen One: Battle, nothing or Sweep; a thrown MithrilKnife (was Fire 3), Train or Tiger Claw; Battle, nothing or Tiger Claw; HyperDrive (was Ice 3), Train or Sweep; Battle, nothing or Tiger Claw; Sweep (was Bolt 3), nothing or Tiger Claw. Then Fallen One again.
+- At 53% and below, a turn each: his line and the charge; Chi Shock; Tiger Claw, a thrown MithrilKnife or Time Warp, and then Sweep or twice as likely nothing; Train, Tiger Claw or the jump, and then a thrown MithrilKnife, Sweep or nothing. Then his line again.
 
 With what Dadaluma does in Zozo added:
 
@@ -54,7 +57,7 @@ With what Dadaluma does in Zozo added:
 
 A script is blocks: each turn, from the top, the first block whose conditions are all true is the monster's turn. These three are blocks before final Kefka's, so they are tested every turn. A block that ends a turn also has the script start over, which for final Kefka's is Fallen One, so each ends with a condition that is never true: what is before it is done, and the turn goes on with final Kefka's script where it was. The hits are counted the same way where his script answers being hit, before what final Kefka's does there.
 
-A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: speed 37, defense 125, magic defense 145, absorbs poison) with 3500 HP, level 40 for the Scrapper's 34, vigor 14 for 10 and evade 60 for 120, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk at a random character or attacks twice, one as likely as the other.
+A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: speed 37, defense 125, magic defense 145, absorbs poison) with 3500 HP, level 38 for the Scrapper's 34, vigor 14 for 10 and evade 60 for 120, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk at a random character or attacks twice, one as likely as the other.
 
 ## How a final boss is made
 
