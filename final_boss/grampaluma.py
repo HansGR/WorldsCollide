@@ -224,13 +224,28 @@ class Grampaluma(FinalBoss):
             colors.append(tuple(min(max(round(grey * tint), 0), 31) for tint in TINT))
         return colors
 
+    @staticmethod
+    def purple_pants(palette):
+        # dadaluma's palette with what is red, orange and yellow in it (his pants, and his ornaments)
+        # in purple: the strong colors, at the same strength and brightness
+        import colorsys
+        STRONG, PURPLE = 0.7, 275 / 360
+        colors = []
+        for color in palette:
+            hue, saturation, value = colorsys.rgb_to_hsv(*(component / 31 for component in color))
+            if saturation >= STRONG:
+                color = tuple(round(component * 31) for component in colorsys.hsv_to_rgb(PURPLE, saturation, value))
+            colors.append(color)
+        return colors
+
     def battle_mod(self):
         from data.bosses import name_enemy
 
         width, height = self.TILES
         dadaluma = name_enemy[self.DADALUMA]
         sprite, _ = self.enemy_sprite(dadaluma)
-        self.giant_sprite_mod(dadaluma, scale = (self.HEIGHT, len(sprite)))
+        self.giant_sprite_mod(dadaluma, scale = (self.HEIGHT, len(sprite)),
+                              palette = self.purple_pants(self.monster_palette(dadaluma)))
         self.helper_palette_mod(self.iron_fist_id, self.chrome(self.monster_palette(self.iron_fist_id)))
         self.helpers_layout_mod(self.TILES, self.HELPER_TILES, len(self.HELPER_POSITIONS))
         self.chance_condition_mod()

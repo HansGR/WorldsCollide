@@ -38,6 +38,7 @@ class FinalBoss:
         from data.bosses import name_enemy
         self.enemy_id = name_enemy[self.ENEMY]
         self.free_palettes = list(FREE_PALETTES)
+        self.free_monster_palettes = [766, 764, 762, 760]   # 4bpp monster palettes (two each): the game's end at 602
 
     def enemies_mod(self, enemies):
         # his stats and name (data/enemies.py, with the other enemies')
@@ -253,22 +254,26 @@ class FinalBoss:
         helper.status_immunities.death = 0
         return helper
 
-    def helper_palette_mod(self, source, palette):
-        # the helpers look like this enemy with this palette: its 16 colors (r, g, b), 0 to 31 each
+    def add_monster_palette(self, palette):
+        # a monster palette of these 16 colors (r, g, b), 0 to 31 each, and its number
         MONSTER_PALETTES, MONSTER_PALETTE_SIZE = 0x127820, 16   # 8 colors each: a 4bpp monster has two
-        FREE_MONSTER_PALETTE = 766                              # the game's end at 602
-
-        spec = Read(self._spec_address(source), self._spec_address(source) + GRAPHICS_SPEC_SIZE - 1)
-        assert not spec[1] & 0x80, "3bpp graphics"
         assert len(palette) == MONSTER_PALETTE_SIZE
 
-        address = MONSTER_PALETTES + FREE_MONSTER_PALETTE * MONSTER_PALETTE_SIZE
+        number = self.free_monster_palettes.pop(0)
+        address = MONSTER_PALETTES + number * MONSTER_PALETTE_SIZE
         assert not any(Read(address, address + 2 * MONSTER_PALETTE_SIZE - 1))
-        space = Reserve(address, address + 2 * MONSTER_PALETTE_SIZE - 1, "final boss: helpers palette")
+        space = Reserve(address, address + 2 * MONSTER_PALETTE_SIZE - 1, "final boss: monster palette")
         space.write([(red | (green << 5) | (blue << 10)).to_bytes(2, "little") for red, green, blue in palette])
+        return number
 
-        spec[2] = (spec[2] & 0xfc) | (FREE_MONSTER_PALETTE >> 8)
-        spec[3] = FREE_MONSTER_PALETTE & 0xff
+    def helper_palette_mod(self, source, palette):
+        # the helpers look like this enemy with this palette: its 16 colors (r, g, b), 0 to 31 each
+        spec = Read(self._spec_address(source), self._spec_address(source) + GRAPHICS_SPEC_SIZE - 1)
+        assert not spec[1] & 0x80, "3bpp graphics"
+
+        number = self.add_monster_palette(palette)
+        spec[2] = (spec[2] & 0xfc) | (number >> 8)
+        spec[3] = number & 0xff
         address = self._spec_address(HELPER_ENEMY)
         Reserve(address, address + GRAPHICS_SPEC_SIZE - 1, "final boss: helpers graphics spec").write(spec)
 
@@ -817,7 +822,8 @@ class FinalBoss:
 
         return monster_sprite.bounds(monster_sprite.sprite_pixels(mold, tiles, graphics)), spec
 
-    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None):
+    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None):
+        # (palette: 16 colors (r, g, b) in the place of the enemy's own)
         # the final boss looks like this enemy, giant and in its palette: at twice its size if that
         # fits the 128x128 pixels of a large mold (it does for a monster with a small mold), or else
         # as large as fits, or at this scale (factor, divisor). a shadow under its feet (its color,
@@ -850,14 +856,19 @@ class FinalBoss:
         space = Write(Bank.F0, graphics, "final boss graphics")
         self._graphics_loader_mod(space.start_address_snes)
 
+        palette_spec = [enemy_spec[2], enemy_spec[3]]
+        if palette is not None:
+            number = self.add_monster_palette(palette)
+            palette_spec = [(enemy_spec[2] & 0xfc) | (number >> 8), number & 0xff]
+
         kefka_spec_address = self._spec_address(self.enemy_id)
         kefka_mold = Read(kefka_spec_address + 4, kefka_spec_address + 4)[0]
 
         space = Reserve(kefka_spec_address, kefka_spec_address + GRAPHICS_SPEC_SIZE - 1, "final kefka graphics spec")
         space.write(
             GIANT_SPRITE_POINTER & 0xff, GIANT_SPRITE_POINTER >> 8,
-            0x80 | (enemy_spec[2] & 0x7f),      # large mold, the enemy's palette
-            enemy_spec[3],
+            0x80 | (palette_spec[0] & 0x7f),    # large mold, the enemy's palette
+            palette_spec[1],
             kefka_mold,
         )
 
