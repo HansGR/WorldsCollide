@@ -31,6 +31,7 @@ class Grampaluma(FinalBoss):
     SWEEP = "Confusion"                     # an attack no script, sketch, control or rage uses: his sweep
     TIME_WARP_HIT_RATE = 150                # slow 2's
 
+    POWER_BYTE, SWEEP_POWER = 6, 0.5        # in an attack's data; sweep has half of tentacle's power
     ONE_TARGET = 0x41                       # an attack's targets (its first byte): one, of the other side
     SEIZURE_BYTE, SEIZURE = 11, 0x40        # in an attack's data: the second status byte (sap)
     HASTE_BYTE, HASTE = 2, 0x08             # the third status byte
@@ -205,6 +206,8 @@ class Grampaluma(FinalBoss):
         status = sweep + self.SEIZURE_BYTE
         data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.SEIZURE])
         data.rom.set_bytes(sweep, [self.ONE_TARGET])
+        power = sweep + self.POWER_BYTE
+        data.rom.set_bytes(power, [round(data.rom.get_bytes(power, 1)[0] * self.SWEEP_POWER)])
 
     @staticmethod
     def chrome(palette):
