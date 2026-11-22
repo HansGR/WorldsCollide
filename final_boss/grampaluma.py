@@ -33,6 +33,7 @@ class Grampaluma(FinalBoss):
 
     POWER_BYTE, SWEEP_POWER = 6, 0.44       # in an attack's data; sweep has this much of tentacle's power
     ONE_TARGET = 0x41                       # an attack's targets (its first byte): one, of the other side
+    POISON = 0x08                           # element
     SEIZURE_BYTE, SEIZURE = 11, 0x40        # in an attack's data: the second status byte (sap)
     HASTE_BYTE, HASTE = 2, 0x08             # the third status byte
 
@@ -67,6 +68,8 @@ class Grampaluma(FinalBoss):
         grampaluma.special_name = self.SPECIAL_NAME
         grampaluma.speed = min(round(grampaluma.speed * self.SPEED), 2 ** 8 - 1)
         grampaluma.vigor = round(grampaluma.vigor * self.VIGOR)
+        grampaluma.weak_elements |= self.POISON         # as dadaluma is (he is protected from the status)
+        assert grampaluma.status_immunities.poison and not (grampaluma.absorb_elements | grampaluma.immune_elements) & self.POISON
         # for time warp: an enemy protected from slow or haste is protected from both
         grampaluma.status_immunities.haste = 0
         grampaluma.status_immunities.slow = 0
