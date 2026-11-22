@@ -88,6 +88,7 @@ class Grampaluma(FinalBoss):
         self.helpers_mod(enemies, HELPER_ENEMY, self.HELPER_POSITIONS, self.POSITION)
 
     def scripts_mod(self, scripts):
+        # (his battle program is written out in final_boss/README.md: keep it up to date with this)
         import data.enemy_script_commands as ai_instr
         from data.spell_names import name_id
         from data.item_names import name_id as item_id

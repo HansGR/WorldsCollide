@@ -39,6 +39,7 @@ class Ultimaro(FinalBoss):
         ultimaro.absorb_elements |= umaro.absorb_elements       # ice
 
     def scripts_mod(self, scripts):
+        # (his battle program is written out in final_boss/README.md: keep it up to date with this)
         import data.enemy_script_commands as ai_instr
         from data.spell_names import name_id
         from data.enemy_script_custom_commands import JUMP

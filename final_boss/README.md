@@ -10,54 +10,164 @@
 | `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
+## Battle programs
+
+Each boss below has its **battle program** first (the turn order and the odds, by the names the attacks have in the battle), then what its attacks are. **Keep the programs up to date when a script changes**: they are what a playtester reads.
+
+How to read them:
+
+- Each turn the boss does the first thing, from the top, whose condition is true. "Every turn" entries are extra: they are done and the turn goes on with what follows.
+- A numbered list is one turn per entry, in order, then again from its first entry.
+- "A, B or C" is one of the three, each as likely (1 in 3). "A or nothing (1 in 3 / 2 in 3)" gives other odds. "Then" is a second action in the same turn.
+- HP conditions are percentages of his full HP. He changes list as soon as his HP crosses one (also upward, if he is healed), and the new list starts at its first entry.
+- Battle is his plain attack. With `-sfb` and ability scaling (`-ase`, `-asr`), the spells in a program (Ice 3, Train, Fallen One, Meteor, Ultima...) are scaled as final Kefka's are; the boss's own attacks are not.
+
 ## Ultimaro
 
 Umaro at twice the size of his sprite (without the shadow under his feet: he is in the air).
 
-- 5 levels above what final Kefka would be in the battle, after scaling and objectives, and a fifth faster.
-- Absorbs ice, as Umaro does.
-- Kefka's battle script with ice for fire and bolt: Storm for Fire 3 and Surge for Bolt 3 above 53% HP; below it, Ice 3 for the first Train.
-- Jumps as Umaro does, in place of a Revenger and a Havoc Wing below 53% HP. He lands 2 to 4 times, as with a Dragon Horn: down and straight back up for each landing, with the damage showing as he leaves.
-- Havoc Wing is Yeti Punch, with the looks of Umaro's Tackle. HyperDrive is Yeti Blast and Goner is U'ghaaaa.
-- Revenger is Enrager: the Bserk spell on the whole party at half its hit rate (75), which Reflect and Runic do not stop.
-- Before U'ghaaaa, "Yeti used a Green Cherry!" and a green cherry appears where Kefka's laughing head did. Its art is `graphics/green_cherry.py`.
+**Stats:** final Kefka's, 5 levels higher (after scaling and objectives) and a fifth faster. Absorbs ice, as Umaro does.
+
+### Battle program
+
+**Below 13% HP, once:**
+1. "Yeti used a Green Cherry!", and he charges up as a green cherry appears
+2. U'ghaaaa
+3. Meteor
+
+**At 53% HP and below:**
+1. "Yeti used a Green Cherry!", and he charges up as a green cherry appears
+2. U'ghaaaa
+3. Yeti Punch, Ice 3 or Enrager; then Yeti Punch or nothing (1 in 3 / 2 in 3)
+4. Train, Yeti Punch or Jump; then Yeti Punch, Jump or nothing
+
+**Above 53% HP:**
+1. Fallen One
+2. Battle, nothing or Yeti Punch
+3. Storm, Train or Yeti Punch
+4. Battle, nothing or Yeti Punch
+5. Ice 3, Train or Yeti Punch
+6. Battle, nothing or Yeti Punch
+7. Surge, nothing or Yeti Punch
+
+**When he is hit** (not while he charges up or in the turns after U'ghaaaa):
+- Below 17% HP, when damaged: nothing, Battle or Ultima
+- Below 49% HP, when damaged: nothing, Battle or Yeti Blast
+
+**When he dies:** the final death, and every enemy goes with him.
+
+### Attacks
+
+- **Yeti Punch** is Havoc Wing (his special: a blow at 4 times the damage), with the looks of Umaro's Tackle.
+- **Yeti Blast** is HyperDrive and **U'ghaaaa** is Goner, renamed.
+- **Enrager** is Revenger remade: the Bserk spell on the whole party at half its hit rate (75), which Reflect and Runic do not stop.
+- **Jump**: as Umaro jumps. He lands 2 to 4 times, as with a Dragon Horn: down and straight back up for each landing, with the damage showing as he leaves.
+- The green cherry is in the place of Kefka's laughing head. Its art is `graphics/green_cherry.py`.
+- From final Kefka's script: Storm was Fire 3, Surge was Bolt 3, the Ice 3 at 53% and below was Train, and the two Jumps were a Revenger and a Havoc Wing.
 
 ## Uncle Ulty
 
 Ultros (the one with all his tentacles) at twice the size of his sprite, without his shadow, and low enough on the screen to be clear of the boxes at the top.
 
-- 5 levels above what final Kefka would be in the battle, as Ultimaro, but no faster than Kefka. A tenth more HP, up to the 65535 an enemy can have: Kefka's 62000 become 65535.
-- Absorbs water.
-- Kefka's battle script with water for bolt: CleanSweep for Bolt 3 above 53% HP, and for the first Train below it. Fire 3 and Ice 3 stay.
-- Havoc Wing is Tentacle: the same attack, with the looks and sound of the Tentacle attack.
-- HyperDrive is Ink Blast: its palettes in ink, and it blinds.
-- Goner is Gumbo. Before it he says "Gwee-hee-hee..." and "It's my special recipe!" and a shrimp appears where Kefka's laughing head did (`graphics/shrimp.py`). Its animation is blue and black where Goner's was red, and it blinds everyone it hits. It may also muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
-- Revenger is Imp Sonata: the Imp spell on the whole party with a hit rate of 110, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
+**Stats:** final Kefka's, 5 levels higher (after scaling and objectives), at Kefka's speed, with 65535 HP (a tenth more than Kefka's 62000 would be 68200: 65535 is the most an enemy can have). Absorbs water.
+
+### Battle program
+
+**Below 13% HP, once:**
+1. "Gwee-hee-hee...", "It's my special recipe!", and he charges up as a shrimp appears
+2. Gumbo
+3. Meteor
+
+**At 53% HP and below:**
+1. "Gwee-hee-hee...", "It's my special recipe!", and he charges up as a shrimp appears
+2. Gumbo
+3. Tentacle, CleanSweep or Imp Sonata; then Tentacle or nothing (1 in 3 / 2 in 3)
+4. Train, Tentacle or Imp Sonata; then Tentacle or nothing (2 in 3 / 1 in 3)
+
+**Above 53% HP:**
+1. Fallen One
+2. Battle, nothing or Tentacle
+3. Fire 3, Train or Tentacle
+4. Battle, nothing or Tentacle
+5. Ice 3, Train or Tentacle
+6. Battle, nothing or Tentacle
+7. CleanSweep, nothing or Tentacle
+
+**When he is hit** (not while he charges up or in the turns after Gumbo):
+- Below 17% HP, when damaged: nothing, Battle or Ultima
+- Below 49% HP, when damaged: nothing, Battle or Ink Blast
+
+**When he dies:** the final death, and every enemy goes with him.
+
+### Attacks
+
+- **Tentacle** is Havoc Wing (his special: a blow at 4 times the damage), with the looks and sound of the Tentacle attack.
+- **Ink Blast** is HyperDrive with its palettes in ink, and it blinds.
+- **Gumbo** is Goner, in blue and black where Goner was red. It blinds everyone it hits, and may muddle each of them, as his Lv.3 Muddle did: a hit rate of 65 against magic block, rolled for each target (`status_chance_mod`, a special effect for the attack, since its own statuses always take).
+- **Imp Sonata** is Revenger remade: the Imp spell on the whole party with a hit rate of 110, which Reflect and Runic do not stop. As the spell does, it turns an imp back.
+- The shrimp is in the place of Kefka's laughing head (`graphics/shrimp.py`).
+- From final Kefka's script: the CleanSweep above 53% was Bolt 3, and the one at 53% and below was Train. Fire 3 and Ice 3 stay.
 
 ## Grampaluma
 
-Dadaluma, in purple pants (the strong reds, oranges and yellows of his palette in purple: his ornaments too), at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). His stats are final Kefka's (and his level), but he is a fifth faster, is weak to poison as Dadaluma is, where final Kefka takes no damage from it (and still protected from the poison status), has a fifth less vigor (the power of his blows: Tiger Claw and the jump) and can be slowed and hasted. His attacks:
+Dadaluma, in purple pants (the strong reds, oranges and yellows of his palette in purple: his ornaments too), at 1.21 times his size (107x68 pixels; he is 88 wide, so the most that fits a formation's 128 pixels is 1.43 times, which crowded the screen and its sprites). He calls in two ChromeFists, as Dadaluma does his Iron Fists.
 
-- Havoc Wing is Tiger Claw, otherwise the same. HyperDrive is as it was.
-- Goner is Chi Shock, which also saps everyone it hits. Before it he says "Friends! Lovely to see you." and charges up as final Kefka does, without the laughing head (it is replaced by an empty picture).
-- Revenger is Time Warp: Slow 2 on the whole party (hit rate 150, which Reflect and Runic do not stop), and Haste for every enemy in the battle, whether it hits or not. An enemy protected from Slow or Haste is protected from both, so he and the ChromeFists are protected from neither.
-- Sweep, Dadaluma's special, is an attack of its own (in the place of Confusion, which nothing in the game uses): a blow on one character with 0.44 of Tentacle's power (it was halved, and then lowered as his vigor was: an attack's power is its own), which saps. It looks and sounds like Dadaluma's own Sweep: the blow his special attack is shown with (`attack_special_animation_mod`).
-- He jumps as Ultimaro does (2 to 4 landings), and throws MithrilKnives.
+**Stats:** final Kefka's, at his level, a fifth faster, with a fifth less vigor (the power of his blows: Battle, Tiger Claw and the jump). Weak to poison as Dadaluma is, where final Kefka takes no damage from it (he is still protected from the poison status). He can be slowed and hasted.
 
-In final Kefka's script, where a turn is one of three things, each as likely:
+### Battle program
 
-- Above 53% HP, after Fallen One: Battle, nothing or Sweep; a thrown MithrilKnife (was Fire 3), Train or Tiger Claw; Battle, nothing or Tiger Claw; HyperDrive (was Ice 3), Train or Sweep; Battle, nothing or Tiger Claw; Sweep (was Bolt 3), nothing or Tiger Claw. Then Fallen One again.
-- At 53% and below, a turn each: his line and the charge; Chi Shock; Tiger Claw, a thrown MithrilKnife or Time Warp, and then Sweep or twice as likely nothing; Train, Tiger Claw or the jump, and then a thrown MithrilKnife, Sweep or nothing. Then his line again.
-
-With what Dadaluma does in Zozo added:
-
-- He calls in two ChromeFists when his timer is above 30 (about a minute) and both are dead or gone, with a whistle, as Dadaluma does his Iron Fists. They are not in the battle at its start. When he dies they go with him (final Kefka's script removes every enemy of the formation).
-- Once, below 25% HP: X-Potion, X-Potion or Potion three times (an X-Potion is 9999 HP to him), and Safe.
+**Every turn** (extra actions: his turn goes on with the lists below):
+- When his timer is above 30 (about a minute; it then starts over) and both ChromeFists are dead or gone: he whistles and calls in two. They are not in the battle at its start.
+- Once, below 25% HP: X-Potion or Potion (2 in 3 / 1 in 3) three times, then Safe on himself.
 - Once, when he has been hit by Fight four times: he throws a Wing Edge at a random character.
 
-A script is blocks: each turn, from the top, the first block whose conditions are all true is the monster's turn. These three are blocks before final Kefka's, so they are tested every turn. A block that ends a turn also has the script start over, which for final Kefka's is Fallen One, so each ends with a condition that is never true: what is before it is done, and the turn goes on with final Kefka's script where it was. The hits are counted the same way where his script answers being hit, before what final Kefka's does there.
+**Below 13% HP, once:**
+1. "Friends! Lovely to see you.", and he charges up
+2. Chi Shock
+3. Meteor
 
-A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: speed 37, defense 125, magic defense 145, absorbs poison) with 3500 HP, level 38 for the Scrapper's 34, vigor 14 for 10 and evade 60 for 120, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. Each turn it throws a Dirk at a random character or attacks twice, one as likely as the other.
+**At 53% HP and below:**
+1. "Friends! Lovely to see you.", and he charges up
+2. Chi Shock
+3. Tiger Claw, MithrilKnife or Time Warp; then Sweep or nothing (1 in 3 / 2 in 3)
+4. Train, Tiger Claw or Jump; then MithrilKnife, Sweep or nothing
+
+**Above 53% HP:**
+1. Fallen One
+2. Battle, nothing or Sweep
+3. MithrilKnife, Train or Tiger Claw
+4. Battle, nothing or Tiger Claw
+5. HyperDrive, Train or Sweep
+6. Battle, nothing or Tiger Claw
+7. Sweep, nothing or Tiger Claw
+
+**When he is hit:**
+- By Fight: one more hit counted for the Wing Edge (and then what follows)
+- Below 17% HP, when damaged (not while he charges up or in the turns after Chi Shock): nothing, Battle or Ultima
+- Below 49% HP, when damaged (the same): nothing, Battle or HyperDrive
+
+**When he dies:** the final death, and every enemy goes with him.
+
+**ChromeFist, each turn:** a thrown Dirk at a random character, or Battle twice (1 in 2 each).
+
+The heal usually takes him back above 53% HP (an X-Potion is 9999 HP to him): he then leaves the list he was in, Chi Shock or not, and starts the one above 53%.
+
+### Attacks
+
+- **Tiger Claw** is Havoc Wing (his special: a blow at 4 times the damage), renamed. **HyperDrive** is as it was.
+- **Chi Shock** is Goner, and also saps everyone it hits. He charges up before it as final Kefka does, without the laughing head (it is replaced by an empty picture).
+- **Time Warp** is Revenger remade: Slow 2 on the whole party (hit rate 150, which Reflect and Runic do not stop), and Haste for every enemy in the battle, whether it hits or not. An enemy protected from Slow or Haste is protected from both, so he and the ChromeFists are protected from neither.
+- **Sweep**, Dadaluma's special, is an attack of its own (in the place of Confusion, which nothing in the game uses): a blow on one character with 0.44 of Tentacle's power (it was halved, and then lowered as his vigor was: an attack's power is its own), which saps. It looks and sounds like Dadaluma's own Sweep: the blow his special attack is shown with (`attack_special_animation_mod`).
+- **MithrilKnife** is thrown at a character. **Jump** is Ultimaro's (2 to 4 landings).
+- From final Kefka's script: above 53% the MithrilKnife was Fire 3, HyperDrive was Ice 3, the last Sweep was Bolt 3 and the other two Sweeps were Havoc Wings. At 53% and below the MithrilKnife in the third turn was Train, the Jump was a Revenger, and the turn's second actions were Havoc Wings.
+
+### ChromeFists
+
+A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's looks: speed 37, defense 125, magic defense 145, absorbs poison) with 3500 HP, level 38 for the Scrapper's 34, vigor 14 for 10 and evade 60 for 120, in a dark chrome palette (the Iron Fist's colors by their brightness, as greys). It is an enemy of its own in the place of one no formation has (382), so the others are as they were. It is protected from all statuses but death, slow and haste. When Grampaluma dies they go with him.
+
+### How his script is made
+
+A script is blocks: each turn, from the top, the first block whose conditions are all true is the monster's turn. What Dadaluma does (the call, the heal, the Wing Edge) is blocks before final Kefka's, so they are tested every turn. A block that ends a turn also has the script start over, which for final Kefka's is Fallen One, so each of them ends with a condition that is never true: what is before it is done, and the turn goes on with final Kefka's script where it was. The hits are counted the same way where his script answers being hit, before what final Kefka's does there.
 
 ## How a final boss is made
 
