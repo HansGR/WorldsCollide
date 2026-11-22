@@ -9,7 +9,7 @@ class Grampaluma(FinalBoss):
     #   once, below 25% hp: x-potion, x-potion or potion three times, and safe
     #   once, when he has been hit by fight four times: he throws a wing edge
     #
-    # a chromefist is an iron fist in chrome with 14000 hp: each turn it throws a dirk or attacks
+    # a chromefist is an iron fist in chrome with 3500 hp: each turn it throws a dirk or attacks
     # twice, one as likely as the other
     NAME = "Grampaluma"
 
@@ -17,7 +17,7 @@ class Grampaluma(FinalBoss):
     HELPER = "Scrapper"                     # the highest of the enemies with the iron fist's looks: his stats
     HELPER_LOOKS = "Iron Fist"
     HELPER_NAME = "ChromeFist"
-    HELPER_HP = 14000
+    HELPER_HP = 3500
     HELPER_LEVEL, HELPER_VIGOR, HELPER_EVADE = 40, 14, 60       # the scrapper's are 34, 10 and 120
 
     SPECIAL_NAME = "Tiger Claw"             # was havoc wing
