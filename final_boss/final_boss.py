@@ -402,6 +402,7 @@ class FinalBoss:
         set_bank(SPRITES_BANK_USERS, lists_space)
         sprite_pointers = list(((lists_space.start_address + len(all_lists)) & 0xffff).to_bytes(2, "little")) * MONSTERS
         self._small_sprites_mod(small)
+        self._helpers_death_mod(boss_height)
 
         pieces_space = Write(Bank.F0, pieces, "final boss: monster sprites")
         for offset, user in enumerate(PIECES_USERS):
@@ -416,6 +417,75 @@ class FinalBoss:
             assert Read(user - 1, user + 2) == [0xbf] + list((SPRITES + offset + 0xc00000).to_bytes(3, "little"))
             Reserve(user, user + 2, "mold sprites address").write(
                 list((table_space.start_address_snes + offset).to_bytes(3, "little")))
+
+    def _helpers_death_mod(self, boss_height):
+        # when the final boss dies he crumbles as he sinks. the animation (C2/A96B) crumbles the
+        # formation's 16x16 tiles of graphics, which the monsters' sprites show, a row of tiles at a
+        # time from the last row up, each row 4 steps after the one under it; what crumbles off is
+        # sand on a background layer, which falls. it is made for final kefka, whose picture fills
+        # the 16x16 tiles and who is at (16, 16):
+        #
+        # - the sand's layer is put at (16, 16). a boss anywhere else has his sand somewhere else
+        #   (above him, when he is lower). with the helpers' mold it is put where the boss is
+        # - the rows crumble from the 16th up. with the helpers' mold the last rows are the helpers'
+        #   and the boss is in the first ones: he would sink whole while the rows under his
+        #   crumbled. the helpers' rows do not wait, and the count starts at the boss's last row
+        #
+        # where the animation sets each row's wait (0 for the last row, 4 for the one above it...),
+        # after it has placed the layer. 8 bit a, 16 bit x and y, data bank $7e
+        WAITS_START, WAITS_END = 0x2aa23, 0x2aa33       # tdc, tax, the loop
+        TILES, STEP = 16, 4
+
+        mold = 0x2000
+        waits, progress = 0xecbc, 0xeccc
+        boss_x, boss_y = 0x80c3, 0x80cf
+        layer_x, layer_y = (0x64b4, 0x7b16), (0x64b6, 0x7b18)   # the layer's scroll, and a copy of it
+
+        assert Read(WAITS_START, WAITS_START + 4) == [0x7b, 0xaa, 0x9d, waits & 0xff, waits >> 8]
+        src = [
+            asm.PHY(),
+            asm.LDY(0x0000, asm.IMM16),
+            asm.LDA(mold, asm.ABS),
+            asm.CMP(HELPERS_MOLD, asm.IMM8),
+            asm.BNE("START"),
+            asm.LDY(TILES - boss_height, asm.IMM16),    # the rows under the boss
+        ]
+        for coordinate, layer in ((boss_x, layer_x), (boss_y, layer_y)):
+            src += [
+                asm.A16(),
+                asm.LDA(coordinate, asm.ABS),
+                asm.AND(0x00ff, asm.IMM16),
+                asm.EOR(0xffff, asm.IMM16),
+                asm.INC(),
+                asm.STA(layer[0], asm.ABS),
+                asm.STA(layer[1], asm.ABS),
+                asm.A8(),
+            ]
+        src += [
+            "START",
+            asm.TDC(),
+            asm.TAX(),
+            "ROW",
+            asm.STA(waits, asm.ABS_X),
+            asm.STZ(progress, asm.ABS_X),
+            asm.CPY(0x0000, asm.IMM16),
+            asm.BEQ("WAIT"),
+            asm.DEY(),
+            asm.BRA("NEXT"),
+            "WAIT",
+            asm.CLC(),
+            asm.ADC(STEP, asm.IMM8),
+            "NEXT",
+            asm.INX(),
+            asm.CPX(TILES, asm.IMM16),
+            asm.BNE("ROW"),
+            asm.PLY(),
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, "final boss: death with helpers")
+        Reserve(WAITS_START, WAITS_END, "final boss death: rows' waits", asm.NOP()).write(
+            asm.JSL(space.start_address_snes),
+        )
 
     def _any_pixels(self, row, column, size):
         # whether the giant sprite has anything in the size x size tiles from this row and column
