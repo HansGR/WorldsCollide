@@ -1046,7 +1046,8 @@ class FinalBoss:
         return monster_sprite.bounds(monster_sprite.sprite_pixels(mold, tiles, graphics)), spec
 
     def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None, right = 0,
-                         smooth = False, recolor = None, draw = None):
+                         smooth = False, recolor = None, draw = None, pixels = None):
+        # (pixels: a sprite drawn for him, rows of the enemy's palette indices, in the place of the enemy's)
         # (smooth: at 3x, with scale3x. recolor: {palette index : another} of the enemy's sprite.
         # draw: called with the sprite in its mold, 128 rows of 128 palette indices, to change it)
         # (right: pixels to the right in the mold, for a sprite that is not as wide)
@@ -1061,7 +1062,10 @@ class FinalBoss:
         # wherever there is room and kefka's pointer is a value no monster has, which the graphics
         # loader is taught to send there
         size = monster_sprite.LARGE_MOLD_TILES * monster_sprite.TILE_PIXELS
+        own_pixels = pixels
         pixels, enemy_spec = self.enemy_sprite(enemy)
+        if own_pixels is not None:
+            pixels = monster_sprite.bounds(own_pixels)
         if shadow_rows:
             pixels = monster_sprite.without_shadow(pixels, shadow_color, shadow_rows)
         if scale is None:

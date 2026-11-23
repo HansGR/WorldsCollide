@@ -1,9 +1,10 @@
 import graphics.lantern_glow as lantern_glow
+import graphics.king_pug as king_pug_sprite
 
 from final_boss.final_boss import FinalBoss, DAMAGED
 
 class KingPug(FinalBoss):
-    # pug (the green one), giant: big, slow, and he hits hard. final kefka's script with
+    # pug (the green one), giant and crowned: big, slow, and he hits hard. final kefka's script with
     # the spell for his weakness as master pug casts it, stop, a lullaby (sleep on the whole party)
     # and life mine: step mine by the target's experience. damaged by an attack with an element, he answers
     # with wallchange
@@ -12,11 +13,14 @@ class KingPug(FinalBoss):
     HP = 2 ** 16 - 1                        # the most an enemy can have
 
     PUG = "Pug"
-    SCALE = (3, 1)                          # pug is 32x32 pixels: 96x96
-    # where he is in his mold, in pixels: lower, to be clear of the boxes at the top, and such that
-    # the glass of his lantern (the middle of it is at 85.5, 75 of his sprite) is under the glow
-    LOWER, RIGHT = 27, 12
-    GLOW_MOVE = (2, 1)                      # the glow: 32 pixels left and 16 down from the laughing head's place
+
+    # his sprite (graphics/king_pug.py: pug's redrawn at 1.5x with his crown, 48x50 pixels) at 2x:
+    # 96x100. where he is in his mold, in pixels: lower, to be clear of the boxes at the top, and
+    # such that the glass of his lantern (the middle of it is at 86, 86 of his sprite at 2x) is under
+    # the glow's (which is 4 pixels above the middle of its picture)
+    SCALE = (2, 1)
+    LOWER, RIGHT = 28, 11
+    GLOW_MOVE = (2, 2)                      # the glow: 32 pixels left and 32 down from the laughing head's place
 
     SPECIAL_NAME = "Cleaver"                # was havoc wing
     ABILITY_NAMES = {
@@ -108,7 +112,12 @@ class KingPug(FinalBoss):
         self.status_chance_mod(data, name_id["Goner"], self.STOP_BYTE, self.STOP, self.GRUDGE_RAY_STOP_HIT_RATE)
 
     def battle_mod(self):
-        self.giant_sprite_mod(self.pug, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
+        # in pug's palette, with two of its colors for the gold of his crown
+        palette = self.monster_palette(self.pug)
+        for index, color in king_pug_sprite.GOLD.items():
+            palette[index] = color
+        self.giant_sprite_mod(self.pug, pixels = king_pug_sprite.pixels(), palette = palette,
+                              scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
 
         self.damaged_condition_mod()
         self.grudge_ray_mod()
