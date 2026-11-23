@@ -15,6 +15,7 @@ GIANT_SPRITE_SCALE = 2
 
 HELPERS_MOLD = 13                   # the mold of a final boss with helpers (the game has 0 to 12)
 CHANCE = 0x0a                       # a script condition (chance_condition_mod)
+DAMAGED = 0x0a                      # or this one (damaged_condition_mod)
 HELPER_ENEMY = 382                  # an enemy no formation has: the helpers' own
 HELPERS = 0x06                      # his helpers: the second and third enemies of his formation
 
@@ -279,6 +280,42 @@ class FinalBoss:
         animation = ANIMATIONS + animation_source * ANIMATION_SIZE
         data.rom.set_bytes(ANIMATIONS + attack * ANIMATION_SIZE, data.rom.get_bytes(animation, ANIMATION_SIZE))
         return address
+
+    def damaged_condition_mod(self):
+        # a script condition the game does not have: ai_instr.If(DAMAGED, 0, 0) is true when the
+        # monster has lost more hp than it had the last time it was tested, for the script's answers
+        # to being hit: put first in a block, where it is tested for every hit. (the game's "if
+        # damaged", 0x05, is true for every hit once anyone has ever damaged the monster.)
+        # in the place of condition 0x0a, which the game does not use (as chance_condition_mod is:
+        # a final boss has one or the other). the hp he had lost at the last test are kept in the
+        # battle's script variables 2 and 3, which final kefka's script does not use.
+        # y = the monster. 8 bit a, x and y
+        CONDITIONS = 0x21d55                # pointers
+        UNUSED_CONDITION = 0x1d2c           # rts
+        hp, max_hp, last_lost = 0x3bf4, 0x3c1c, 0x3eb2
+
+        pointer = CONDITIONS + DAMAGED * 2
+        assert Read(pointer, pointer + 1) == list(UNUSED_CONDITION.to_bytes(2, "little"))
+        src = [
+            asm.A16(),
+            asm.LDA(max_hp, asm.ABS_Y),
+            asm.SEC(),
+            asm.SBC(hp, asm.ABS_Y),         # the hp he has lost
+            asm.CMP(last_lost, asm.ABS),
+            asm.STA(last_lost, asm.ABS),    # (keeps the flags of the comparison)
+            asm.A8(),
+            asm.BEQ("FALSE"),
+            asm.BGE("TRUE"),
+            "FALSE",
+            asm.CLC(),
+            asm.RTS(),
+            "TRUE",
+            asm.SEC(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: damaged script condition")
+        Reserve(pointer, pointer + 1, "damaged script condition pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
 
     def chance_condition_mod(self):
         # a script condition the game does not have: ai_instr.If(CHANCE, n, 0) is true n times in 256.

@@ -172,7 +172,7 @@ A script is blocks: each turn, from the top, the first block whose conditions ar
 
 ## King Pug
 
-Pug (the green one) at 3x the size of his sprite (96x96 pixels) with its edges smoothed (the scale3x rule, so its diagonal edges are steps of 1 pixel and not of 3), and a crown after the Tonberry King's (`graphics/crown.py`, in two colors of pug's palette which his sprite gives up for gold).
+Pug (the green one) at 3x the size of his sprite (96x96 pixels).
 
 **Stats:** final Kefka's, with +0 levels, 0.8x speed, 1.2x vigor (the power of his blows: Battle and Cleaver) and 65535 HP (1.057x). Absorbs water, as the pugs do, until his first WallChange.
 
@@ -199,7 +199,7 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels) with its edges s
 7. Stop / nothing / Cleaver
 
 **When he is hit:**
-- By an attack with an element (a spell, or a weapon with one; whether or not it damages him): WallChange. Nothing else below is done for that hit.
+- When an attack with an element (a spell, or a weapon with one) damages him: WallChange. Nothing else below is done for that hit. An attack with no element, or one that does him no damage (he takes none from 7 of the 8 elements after a WallChange, and absorbs one), does not.
 - Below 17% HP, when damaged (not while he charges up or in the turns after Grudge Ray): nothing / Battle / Ultima
 - Below 49% HP, when damaged (the same): nothing / Battle / Life Mine
 
@@ -257,3 +257,4 @@ Rules to keep:
 - `chance_condition_mod()` adds a script condition the game does not have, in the place of one it does not use: `If(CHANCE, n, 0)` is true n times in 256. Conditions are tested as the script is read and variables are set when the turn is taken, so a choice between two blocks is made by a variable set from the chance the turn before (the ChromeFists' script).
 - `party_statuses_mod(data, attack, statuses_byte, statuses)` makes an attack also set statuses on every enemy in the battle. `new_attack_mod(data, attack, source, name, animation_source)` makes an attack nothing uses into a new one. `jump_mod()` and `jump_animation_mod()` are the Dragon Horn jump and its landings. In a script, `JUMP` and `THROW` (`data/enemy_script_custom_commands.py`, `command_attacks_mod`) can be chosen as attacks are.
 - The final boss's death (he crumbles from his feet up as he sinks) is made for final Kefka: it crumbles the formation's 16x16 tiles of graphics from the last row up, and puts the falling sand on a layer at (16, 16), where Kefka is. With the helpers' mold `_helpers_death_mod` puts the sand's layer where the boss is and starts the crumbling at his last row (the rows under his are the helpers', which crumble at once). A boss alone in the formation at Kefka's place, as Ultimaro and Uncle Ulty are, needs neither.
+- `damaged_condition_mod()` adds another script condition in that same place (a final boss has one or the other): `If(DAMAGED, 0, 0)` is true when the monster has lost more HP than at its last test, for a block of the answers to being hit ("this hit damaged him": put it first in the block). The game's own "if damaged" (0x05) is true for every hit once anyone has ever damaged the monster.
