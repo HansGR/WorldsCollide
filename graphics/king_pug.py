@@ -1,5 +1,5 @@
 # king pug's sprite (final_boss/king_pug.py shows it at twice this size): pug's at 1.5x, 48x48
-# pixels, with 1 row above it for his crown
+# pixels, with his crown
 #
 # the automatic 1.5x of pug's sprite (the scale3x rule, then every 2x2 pixels as one), with a crown
 # drawn by hand at that size, so its pixels are as large as his (after the tonberry king's: gold
@@ -9,14 +9,13 @@
 # (GOLD), the sprite's own being 7 and 8
 
 PIXELS = [
-    ".........................1...1...1..............",
-    "........................1e1.1e1.1e1.............",
-    "........................1e111e111e1.............",
-    ".......................1ee1deeed1ee1............",
-    ".......................1eeddeeeddee1............",
-    "............111........1eeeeeeeeeee1............",
-    "..........1111111.....11ddddddddddd1............",
-    ".........11ccccc11111117222244477711............",
+    "........................1...1...1...............",
+    ".......................1e1.1e1.1e1..............",
+    ".......................1e111e111e1..............",
+    "......................1ee1deeed1ee1.............",
+    "............111.......1eeddeeeddee1.............",
+    "..........1111111.....1eeeeeeeeeee1.............",
+    ".........11ccccc1111111ddddddddddd11............",
     "........11cccccccc111112222447777711............",
     "........1cc6cc111cccc1122444477777111...........",
     ".......11c66cc11111111722477777777411...........",
@@ -62,7 +61,7 @@ PIXELS = [
 
 GOLD = {13 : (20, 12, 2), 14 : (31, 23, 4)}     # palette index : (r, g, b), 0 to 31
 TRANSPARENT = "."
-GLASS_CENTER = (43, 39)     # the middle of the lantern's glass: left of this column, above this row
+GLASS_CENTER = (43, 38)     # the middle of the lantern's glass: left of this column, above this row
 
 def pixels():
     # rows of palette indices, 0 is transparent
