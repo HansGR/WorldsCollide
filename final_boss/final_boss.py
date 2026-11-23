@@ -858,7 +858,8 @@ class FinalBoss:
             asm.JSR(queue_animation, asm.ABS),
         )
 
-    def goner_sprite_mod(self, pixels, palette):
+    def goner_sprite_mod(self, pixels, palette, move = (0, 0)):
+        # (move: where the picture is, in steps of 16 pixels to the left and down from the head's place)
         # before goner final kefka's laughing head appears in front of him and fades away: battle
         # animation 399. it becomes this picture: 32 rows of 32 palette indices (0 is transparent),
         # and its 8 colors (the first is unused). the picture is seen as it is given
@@ -899,6 +900,16 @@ class FinalBoss:
         frame = word(layer_animation + 2)
         frame_start, frame_end = word(FRAME_POINTERS + frame * 2), word(FRAME_POINTERS + frame * 2 + 2)
         assert frames & 0x3f == 1 and Read(FRAMES + frame_start, FRAMES + frame_end - 1) == HEAD_FRAME
+
+        if move != (0, 0):
+            # the frame's tiles: where each goes (x, y: a nibble each), and which. the animation
+            # is flipped for a monster, so more x is further left on the screen
+            moved = list(HEAD_FRAME)
+            for index in range(0, len(moved), 2):
+                x, y = (moved[index] >> 4) + move[0], (moved[index] & 0x0f) + move[1]
+                assert 0 <= x < 16 and 0 <= y < 16
+                moved[index] = (x << 4) | y
+            Reserve(FRAMES + frame_start, FRAMES + frame_end - 1, "final boss: goner sprite frame").write(moved)
 
         # the 8x8 tiles of the frame's 16x16 tiles 0x10, 0x11, 0x18 and 0x19: 4 rows of 4
         TILES = len(pixels) // monster_sprite.TILE_PIXELS
@@ -958,7 +969,8 @@ class FinalBoss:
 
         return monster_sprite.bounds(monster_sprite.sprite_pixels(mold, tiles, graphics)), spec
 
-    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None):
+    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None, right = 0):
+        # (right: pixels to the right in the mold, for a sprite that is not as wide)
         # (palette: 16 colors (r, g, b) in the place of the enemy's own)
         # the final boss looks like this enemy, giant and in its palette: at twice its size if that
         # fits the 128x128 pixels of a large mold (it does for a monster with a small mold), or else
@@ -985,6 +997,9 @@ class FinalBoss:
         if lower:
             assert not any(any(row) for row in pixels[-lower:]), "the sprite is too high to be lower"
             pixels = [[0] * len(pixels[0]) for _ in range(lower)] + pixels[:-lower]
+        if right:
+            assert not any(any(row[-right:]) for row in pixels), "the sprite is too wide to be further right"
+            pixels = [[0] * right + row[:-right] for row in pixels]
         self.giant_sprite_pixels = pixels
         mold, graphics = monster_sprite.sprite_data(pixels, no_empty_rows = True)
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)

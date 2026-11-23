@@ -179,13 +179,13 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on t
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "......", and he charges up as the laughing head appears
-2. Grudge
+1. "......", and he charges up as his lantern lights up and shines
+2. Grudge Ray
 3. Meteor
 
 **At 53% HP and below:**
-1. "......", and he charges up as the laughing head appears
-2. Grudge
+1. "......", and he charges up as his lantern lights up and shines
+2. Grudge Ray
 3. Cleaver / Life Mine / Lullaby, then Cleaver / nothing / nothing
 4. Train / Cleaver / Lullaby, then Cleaver / Cleaver / nothing
 
@@ -198,7 +198,7 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on t
 6. Battle / nothing / Cleaver
 7. Stop / nothing / Cleaver
 
-**When he is hit** (not while he charges up or in the turns after Grudge):
+**When he is hit** (not while he charges up or in the turns after Grudge Ray):
 - Below 17% HP, when damaged: nothing / Battle / Ultima
 - Below 49% HP, when damaged: nothing / Battle / Life Mine
 
@@ -212,7 +212,7 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on t
 - **Life Mine** is an attack of its own (in the place of Confusion, which nothing in the game uses, as Grampaluma's Sweep is: a seed has one final boss): Step Mine's looks, on one character, for that character's experience / 64, whatever the defenses. 1067 at level 30, 3668 at level 45, 8773 at level 60, and 9999 from level 63 on (`experience_damage_mod`). A character who joins at a level has that level's experience.
 - **Lullaby** is Revenger remade: the Sleep spell on the whole party with a hit rate of 90 (the spell's is 111), which Reflect and Runic do not stop.
 - **Stop** is the spell, on one character.
-- **Grudge** is Goner, renamed.
+- **Grudge Ray** is Goner, renamed. Before it his lantern lights up and shines: a picture of its glass lit, with rays (`graphics/lantern_glow.py`), is shown over it in the place of Kefka's laughing head and taken away. The picture can only be put in steps of 16 pixels (`goner_sprite_mod(..., move)`), so he is where in his mold puts the glass under it (`giant_sprite_mod(..., lower, right)`).
 - From final Kefka's script: WallChange was Fallen One, the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
 
 ## How a final boss is made

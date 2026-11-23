@@ -1,3 +1,5 @@
+import graphics.lantern_glow as lantern_glow
+
 from final_boss.final_boss import FinalBoss
 
 class KingPug(FinalBoss):
@@ -10,11 +12,14 @@ class KingPug(FinalBoss):
 
     PUG = "Pug"
     SCALE = (3, 1)                          # pug is 32x32 pixels: 96x96
-    LOWER = 32                              # pixels: clear of the boxes at the top
+    # where he is in his mold, in pixels: lower, to be clear of the boxes at the top, and such that
+    # the glass of his lantern (the middle of it is at 85.5, 75 of his sprite) is under the glow
+    LOWER, RIGHT = 27, 12
+    GLOW_MOVE = (2, 1)                      # the glow: 32 pixels left and 16 down from the laughing head's place
 
     SPECIAL_NAME = "Cleaver"                # was havoc wing
     ABILITY_NAMES = {
-        "Goner"         : "Grudge",
+        "Goner"         : "Grudge Ray",
         "Revenger"      : "Lullaby",
     }
     GONER_TEXT = "......<wait 60 frames><end>"
@@ -86,4 +91,7 @@ class KingPug(FinalBoss):
         self.experience_damage_mod(data, name_id[self.LIFE_MINE])
 
     def battle_mod(self):
-        self.giant_sprite_mod(self.pug, scale = self.SCALE, lower = self.LOWER)
+        self.giant_sprite_mod(self.pug, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
+
+        # his lantern lights up and shines before grudge ray: the glow is shown over it, and taken away
+        self.goner_sprite_mod(lantern_glow.pixels(), lantern_glow.palette(), self.GLOW_MOVE)
