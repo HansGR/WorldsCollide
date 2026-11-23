@@ -202,6 +202,7 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 - When an attack with an element (a spell, or a weapon with one) damages him: WallChange. Nothing else below is done for that hit. An attack with no element, or one that does him no damage (he takes none from 7 of the 8 elements after a WallChange, and absorbs one), does not.
 - Below 17% HP, when damaged (not while he charges up or in the turns after Grudge Ray): nothing / Battle / Ultima
 - Below 49% HP, when damaged (the same): nothing / Battle / Life Mine
+- At 49% HP and above, when damaged (the same): nothing / Battle / Battle. Final Kefka does nothing when hit there.
 
 **When he dies:** the final death, and every enemy goes with him.
 

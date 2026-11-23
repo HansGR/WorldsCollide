@@ -40,7 +40,7 @@ class KingPug(FinalBoss):
     NO_WEAKNESS_ATTACK = "Battle"           # before his first wallchange
 
     WATER, ANY_ELEMENT = 0x80, 0xff         # elements
-    SELF, ALL_CHARACTERS = 0x36, 0x43       # targets
+    SELF, ALL_CHARACTERS, ATTACKER = 0x36, 0x43, 0x47       # targets (the attacker: who hit him last)
     POWER_BYTE = 6                          # in an attack's data
 
     def enemies_mod(self, enemies):
@@ -81,6 +81,16 @@ class KingPug(FinalBoss):
         # hit below 49% hp: life mine for hyperdrive (master pug answers with step mine)
         script.replace(ai_instr.RandomAttack(nothing, name_id["Battle"], name_id["HyperDrive"]),
                        ai_instr.RandomAttack(nothing, name_id["Battle"], life_mine))
+
+        # hit at any other hp: battle (final kefka does nothing when hit above 49% hp). the last of
+        # what he does when he is hit, under the same conditions as kefka's own
+        script.insert(len(script.instructions) - 1, [
+            ai_instr.EndIf(),
+            ai_instr.If(0x15, 0x00, 0x00),              # not while he charges up
+            ai_instr.If(0x05, 0x00, 0x00),              # hit
+            ai_instr.SetTarget(self.ATTACKER),
+            ai_instr.RandomAttack(nothing, name_id["Battle"], name_id["Battle"]),
+        ])
 
         # damaged by an attack with an element: wallchange, on himself (before what else he does
         # when he is hit, after what he does when he dies)
