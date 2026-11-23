@@ -150,7 +150,9 @@ class FinalBoss:
             (landing_script & 0xffff).to_bytes(2, "little"),
         )
 
-    def experience_damage_mod(self, data, attack):
+    def experience_damage_mod(self, data, attack, free_effect = 0x45):
+        # (free_effect: a special effect that does nothing for each target, or for each strike: 0x45,
+        # 0x46 and 0x47 are, and no attack that is used has them)
         # an attack does damage by its target (this is its special effect, in the place of any it had): the character's
         # experience divided by the attack's power, whatever the defenses, as step mine's is the
         # steps divided by its power (a level 45 character has 234808 experience, a level 60 one
@@ -160,7 +162,6 @@ class FinalBoss:
         EFFECT = 9                              # in the attack's data
         TARGET_EFFECTS = 0x23dcd                # what to call for each target, by special effect
         STRIKE_EFFECTS = 0x242e1
-        FREE_EFFECT = 0x45                      # does nothing for each target, or for each strike
         NOTHING, NOTHING_FOR_STRIKE = 0x388c, 0x3e8a
         DIVIDE = 0x4792                         # a (16 bit) / x: a = the quotient, x = the remainder
         FIRST_ENEMY = 8
@@ -170,11 +171,11 @@ class FinalBoss:
         high, low = 0xee, 0xf0
 
         effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
-        pointer = TARGET_EFFECTS + FREE_EFFECT * 2
+        pointer = TARGET_EFFECTS + free_effect * 2
         assert Read(pointer, pointer + 1) == list(NOTHING.to_bytes(2, "little")), "the effect is in use"
-        pointer_for_strike = STRIKE_EFFECTS + FREE_EFFECT * 2
+        pointer_for_strike = STRIKE_EFFECTS + free_effect * 2
         assert Read(pointer_for_strike, pointer_for_strike + 1) == list(NOTHING_FOR_STRIKE.to_bytes(2, "little"))
-        data.rom.set_bytes(effect, [FREE_EFFECT])
+        data.rom.set_bytes(effect, [free_effect])
 
         src = [
             asm.CPY(FIRST_ENEMY, asm.IMM8),
@@ -969,7 +970,10 @@ class FinalBoss:
 
         return monster_sprite.bounds(monster_sprite.sprite_pixels(mold, tiles, graphics)), spec
 
-    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None, right = 0):
+    def giant_sprite_mod(self, enemy, shadow_color = None, shadow_rows = 0, lower = 0, scale = None, palette = None, right = 0,
+                         smooth = False, recolor = None, draw = None):
+        # (smooth: at 3x, with scale3x. recolor: {palette index : another} of the enemy's sprite.
+        # draw: called with the sprite in its mold, 128 rows of 128 palette indices, to change it)
         # (right: pixels to the right in the mold, for a sprite that is not as wide)
         # (palette: 16 colors (r, g, b) in the place of the enemy's own)
         # the final boss looks like this enemy, giant and in its palette: at twice its size if that
@@ -993,13 +997,21 @@ class FinalBoss:
         # the boxes at the top of the screen (it is at the top of the mold otherwise, as all monsters'
         # are). the battle takes a monster's height to be its mold's rows before the first empty one,
         # and hangs on a mold with an empty first row: the rows above the sprite get an empty tile
-        pixels = monster_sprite.canvas(monster_sprite.scale(pixels, *scale), size)
+        if recolor:
+            pixels = [[recolor.get(pixel, pixel) for pixel in row] for row in pixels]
+        if smooth:
+            assert tuple(scale) == (3, 1)
+            pixels = monster_sprite.canvas(monster_sprite.scale3x(pixels), size)
+        else:
+            pixels = monster_sprite.canvas(monster_sprite.scale(pixels, *scale), size)
         if lower:
             assert not any(any(row) for row in pixels[-lower:]), "the sprite is too high to be lower"
             pixels = [[0] * len(pixels[0]) for _ in range(lower)] + pixels[:-lower]
         if right:
             assert not any(any(row[-right:]) for row in pixels), "the sprite is too wide to be further right"
             pixels = [[0] * right + row[:-right] for row in pixels]
+        if draw:
+            draw(pixels)
         self.giant_sprite_pixels = pixels
         mold, graphics = monster_sprite.sprite_data(pixels, no_empty_rows = True)
         assert len(mold) == monster_sprite.mold_size(monster_sprite.LARGE_MOLD_TILES)

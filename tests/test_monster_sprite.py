@@ -143,5 +143,17 @@ class TestMonsterSprite(unittest.TestCase):
         with self.assertRaises(AssertionError):
             monster_sprite.canvas(monster_sprite.scale(pixels, 2), 128)
 
+    def test_scale3x(self):
+        # 3 times the size, no new color, flat areas as they were, and a diagonal edge in steps smaller than 3 pixels
+        pixels = [[1 if x >= y else 2 for x in range(8)] for y in range(8)]
+        scaled = monster_sprite.scale3x(pixels)
+        self.assertEqual((len(scaled), len(scaled[0])), (24, 24))
+        self.assertEqual({pixel for row in scaled for pixel in row}, {1, 2})
+        self.assertEqual(monster_sprite.scale3x([[5] * 4] * 4), [[5] * 12] * 12)
+        plain = monster_sprite.scale(pixels, 3)
+        self.assertNotEqual(scaled, plain)
+        edge = [row.index(1) for row in scaled[3:21]]
+        self.assertTrue(all(0 <= b - a <= 2 for a, b in zip(edge, edge[1:])))
+
 if __name__ == '__main__':
     unittest.main()

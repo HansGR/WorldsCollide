@@ -172,7 +172,7 @@ A script is blocks: each turn, from the top, the first block whose conditions ar
 
 ## King Pug
 
-Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on the screen to be clear of the boxes at the top.
+Pug (the green one) at 3x the size of his sprite (96x96 pixels) with its edges smoothed (the scale3x rule, so its diagonal edges are steps of 1 pixel and not of 3), and a crown after the Tonberry King's (`graphics/crown.py`, in two colors of pug's palette which his sprite gives up for gold).
 
 **Stats:** final Kefka's, with +0 levels, 0.8x speed, 1.2x vigor (the power of his blows: Battle and Cleaver) and 65535 HP (1.057x). Absorbs water, as the pugs do, until his first WallChange.
 
@@ -190,7 +190,7 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on t
 4. Train / Cleaver / Lullaby, then Cleaver / Cleaver / nothing
 
 **Above 53% HP:**
-1. WallChange
+1. Fallen One
 2. Battle / nothing / Cleaver
 3. Weakness spell / Train / Cleaver
 4. Battle / nothing / Cleaver
@@ -198,22 +198,23 @@ Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on t
 6. Battle / nothing / Cleaver
 7. Stop / nothing / Cleaver
 
-**When he is hit** (not while he charges up or in the turns after Grudge Ray):
-- Below 17% HP, when damaged: nothing / Battle / Ultima
-- Below 49% HP, when damaged: nothing / Battle / Life Mine
+**When he is hit:**
+- By an attack with an element (a spell, or a weapon with one; whether or not it damages him): WallChange. Nothing else below is done for that hit.
+- Below 17% HP, when damaged (not while he charges up or in the turns after Grudge Ray): nothing / Battle / Ultima
+- Below 49% HP, when damaged (the same): nothing / Battle / Life Mine
 
 **When he dies:** the final death, and every enemy goes with him.
 
 ### Attacks
 
 - **Cleaver** is Havoc Wing (his special: a blow at 4x damage), renamed. The pugs' own Cleaver is 8x.
-- **WallChange**, on himself, in the place of Fallen One: he is weak to one element (chosen at random each time), takes no damage from the other seven, and absorbs one of those. Attacks with no element are as they were.
+- **WallChange**, on himself: he is weak to one element (chosen at random each time), takes no damage from the other seven, and absorbs one of those. Attacks with no element are as they were.
 - **Weakness spell** is the spell Master Pug casts for the element he is weak to: fire Ice 3, ice Fire 3, bolt W Wind, poison Pearl, wind Bolt 3, pearl Bio, earth CleanSweep, water Quake. Before his first WallChange it is Battle. (`WEAKNESS` in `data/enemy_script_custom_commands.py`: an attack value a script can choose as it does attacks.)
 - **Life Mine** is an attack of its own (in the place of Confusion, which nothing in the game uses, as Grampaluma's Sweep is: a seed has one final boss): Step Mine's looks, on one character, for that character's experience / 64, whatever the defenses. 1067 at level 30, 3668 at level 45, 8773 at level 60, and 9999 from level 63 on (`experience_damage_mod`). A character who joins at a level has that level's experience.
 - **Lullaby** is Revenger remade: the Sleep spell on the whole party with a hit rate of 90 (the spell's is 111), which Reflect and Runic do not stop.
 - **Stop** is the spell, on one character.
-- **Grudge Ray** is Goner, renamed. Before it his lantern lights up and shines: a picture of its glass lit, with rays (`graphics/lantern_glow.py`), is shown over it in the place of Kefka's laughing head and taken away. The picture can only be put in steps of 16 pixels (`goner_sprite_mod(..., move)`), so he is where in his mold puts the glass under it (`giant_sprite_mod(..., lower, right)`).
-- From final Kefka's script: WallChange was Fallen One, the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
+- **Grudge Ray** is Goner, renamed. It may also stop each one it hits: a hit rate of 65 against magic block, rolled for each target, as Uncle Ulty's Gumbo may muddle. Before it his lantern lights up and shines: a picture of its glass lit, with rays (`graphics/lantern_glow.py`), is shown over it in the place of Kefka's laughing head and taken away. The picture can only be put in steps of 16 pixels (`goner_sprite_mod(..., move)`), so he is where in his mold puts the glass under it (`giant_sprite_mod(..., lower, right)`).
+- From final Kefka's script: the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
 
 ## How a final boss is made
 

@@ -119,6 +119,34 @@ def scale(pixels, factor, divisor = 1):
     height, width = len(pixels) * factor // divisor, len(pixels[0]) * factor // divisor
     return [[pixels[y * divisor // factor][x * divisor // factor] for x in range(width)] for y in range(height)]
 
+def scale3x(pixels):
+    # the sprite at 3 times its size with its edges smoothed (the scale3x rule): a pixel of the
+    # result is the neighbor's color where two neighbors of the original agree across a corner, so
+    # diagonal edges are steps of 1 pixel and not of 3. no color is added
+    height, width = len(pixels), len(pixels[0])
+    def at(y, x):
+        return pixels[min(max(y, 0), height - 1)][min(max(x, 0), width - 1)]
+
+    result = [[0] * (width * 3) for _ in range(height * 3)]
+    for y in range(height):
+        for x in range(width):
+            a, b, c = at(y - 1, x - 1), at(y - 1, x), at(y - 1, x + 1)
+            d, e, f = at(y, x - 1), at(y, x), at(y, x + 1)
+            g, h, i = at(y + 1, x - 1), at(y + 1, x), at(y + 1, x + 1)
+            block = [e] * 9
+            if b != h and d != f:
+                block[0] = d if d == b else e
+                block[1] = b if (d == b and e != c) or (b == f and e != a) else e
+                block[2] = f if b == f else e
+                block[3] = d if (d == b and e != g) or (d == h and e != a) else e
+                block[5] = f if (b == f and e != i) or (h == f and e != c) else e
+                block[6] = d if d == h else e
+                block[7] = h if (d == h and e != i) or (h == f and e != g) else e
+                block[8] = f if h == f else e
+            for index, color in enumerate(block):
+                result[y * 3 + index // 3][x * 3 + index % 3] = color
+    return result
+
 def bounds(pixels):
     # the sprite without the empty rows and columns after its last pixels
     height = max(y for y, row in enumerate(pixels) if any(row)) + 1
