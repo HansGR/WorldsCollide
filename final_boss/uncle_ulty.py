@@ -125,30 +125,12 @@ class UncleUlty(FinalBoss):
 
 
     def gumbo_mod(self, goner):
-        # goner, which only final kefka has, in blue and black for red: the palette of its streaks,
-        # and what its animation script does to the colors of the background and of the monster
-        #
-        # the script's color commands (b6: the background, b9 and bc: the monsters) take a byte:
-        # which of red (0x80), green (0x40) and blue (0x20), more (0x10) or less, and how much
-        SCRIPT_POINTERS, SCRIPTS = 0x11ead8, 0x100000
-        BG1_LAYER, LAYER_PALETTES = 1, 6
-        SCRIPT_SIZE = 258
-
-        animation = ATTACK_ANIMATIONS + goner * ATTACK_ANIMATION_SIZE
-        layer_animation = Read(animation + BG1_LAYER * 2, animation + BG1_LAYER * 2 + 1)
-        layer_animation = layer_animation[0] | (layer_animation[1] << 8)
-
-        # the streaks: red and blue change places
-        palette = Read(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER)[0]
+        # goner, which only final kefka has, in blue and black for red: the palette of its streaks
+        # (red and blue change places), and what its animation script does to the colors of the
+        # background and of the monster
         def blue(color):
             return (color >> 10) & 0x1f | (color & 0x03e0) | ((color & 0x1f) << 10)
-        space = Reserve(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER, "gumbo palette")
-        space.write(self.add_palette([blue(color) for color in self._palette(palette)]))
-
-        pointer = Read(SCRIPT_POINTERS + layer_animation * 2, SCRIPT_POINTERS + layer_animation * 2 + 1)
-        script_address = SCRIPTS + (pointer[0] | (pointer[1] << 8))
-        script = bytes(Read(script_address, script_address + SCRIPT_SIZE - 1))
-        for red, blue in (
+        self.goner_colors_mod(goner, blue, (
             ("b6 61", "b6 c1"),             # the background turns red: blue
             ("b6 31", "b6 c1"),             # then to purple: stays blue
             ("b6 81", "b6 21"),             # then to blue: black
@@ -156,9 +138,4 @@ class UncleUlty(FinalBoss):
             ("b9 60", "b9 c0"),             # the monster turns red: blue
             ("bc 61", "bc c1"),
             ("b6 8f bc 8f", "b6 2f bc 2f"), # both go dark
-        ):
-            red, blue = bytes.fromhex(red), bytes.fromhex(blue)
-            assert script.count(red) == 1
-            script = script.replace(red, blue)
-        space = Reserve(script_address, script_address + SCRIPT_SIZE - 1, "gumbo animation script")
-        space.write(list(script))
+        ))

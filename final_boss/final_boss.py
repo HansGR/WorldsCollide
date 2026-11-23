@@ -896,6 +896,44 @@ class FinalBoss:
             asm.JSR(queue_animation, asm.ABS),
         )
 
+    def goner_colors_mod(self, goner, streak_color, script_changes):
+        # goner, which only final kefka has, in other colors than red: the palette of its streaks
+        # (streak_color: a 15 bit color for each of its 8), and what its animation script does to
+        # the colors of the background and of the monster (script_changes: (bytes, bytes in their
+        # place) in hex, each found once in the script)
+        #
+        # the script's color commands (b6: the background, b9 and bc: the monsters) take a byte:
+        # which of red (0x80), green (0x40) and blue (0x20), more (0x10) or less, and how much.
+        # goner's: b6 61 (the background turns red), b6 31 (then purple), b6 81 (then blue),
+        # b6 91 b6 21 (and red again), b9 60 and bc 61 (the monster turns red), b6 8f bc 8f (both
+        # go dark)
+        ATTACK_ANIMATIONS, ATTACK_ANIMATION_SIZE = 0x107fb2, 14
+        SCRIPT_POINTERS, SCRIPTS = 0x11ead8, 0x100000
+        BG1_LAYER, LAYER_PALETTES = 1, 6
+        SCRIPT_SIZE = 258
+        PALETTE_COLORS = PALETTE_SIZE // 2
+
+        animation = ATTACK_ANIMATIONS + goner * ATTACK_ANIMATION_SIZE
+        layer_animation = Read(animation + BG1_LAYER * 2, animation + BG1_LAYER * 2 + 1)
+        layer_animation = layer_animation[0] | (layer_animation[1] << 8)
+
+        palette = Read(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER)[0]
+        address = PALETTES + palette * PALETTE_SIZE
+        data = Read(address, address + PALETTE_SIZE - 1)
+        colors = [data[index * 2] | (data[index * 2 + 1] << 8) for index in range(PALETTE_COLORS)]
+        space = Reserve(animation + LAYER_PALETTES + BG1_LAYER, animation + LAYER_PALETTES + BG1_LAYER, "goner palette")
+        space.write(self.add_palette([streak_color(color) for color in colors]))
+
+        pointer = Read(SCRIPT_POINTERS + layer_animation * 2, SCRIPT_POINTERS + layer_animation * 2 + 1)
+        script_address = SCRIPTS + (pointer[0] | (pointer[1] << 8))
+        script = bytes(Read(script_address, script_address + SCRIPT_SIZE - 1))
+        for old, new in script_changes:
+            old, new = bytes.fromhex(old), bytes.fromhex(new)
+            assert script.count(old) == 1 and len(old) == len(new)
+            script = script.replace(old, new)
+        space = Reserve(script_address, script_address + SCRIPT_SIZE - 1, "goner animation script")
+        space.write(list(script))
+
     def goner_sprite_mod(self, pixels, palette, move = (0, 0)):
         # (move: where the picture is, in steps of 16 pixels to the left and down from the head's place)
         # before goner final kefka's laughing head appears in front of him and fades away: battle

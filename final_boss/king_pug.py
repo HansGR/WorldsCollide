@@ -111,6 +111,24 @@ class KingPug(FinalBoss):
         self.giant_sprite_mod(self.pug, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
 
         self.damaged_condition_mod()
+        self.grudge_ray_mod()
 
         # his lantern lights up and shines before grudge ray: the glow is shown over it, and taken away
         self.goner_sprite_mod(lantern_glow.pixels(), lantern_glow.palette(), self.GLOW_MOVE)
+
+    def grudge_ray_mod(self):
+        # grudge ray is goner in green and gold for red: gold streaks, and the background and the
+        # monster turn green, then gold, then green again
+        from data.spell_names import name_id
+        def gold(color):
+            red, green, blue = color & 0x1f, (color >> 5) & 0x1f, (color >> 10) & 0x1f
+            return red | (max(green, round(red * 0.8)) << 5) | (blue << 10)
+        self.goner_colors_mod(name_id["Goner"], gold, (
+            ("b6 61", "b6 a1"),             # the background turns red: green (less red and blue)
+            ("b6 31", "b6 91"),             # then to purple: gold (more red)
+            ("b6 81", "b6 81"),             # then to blue: green again (less red)
+            ("b6 91 b6 21", "b6 a1 b6 a1"), # and back to red: stays green
+            ("b9 60", "b9 a0"),             # the monster turns red: green
+            ("bc 61", "bc a1"),
+            ("b6 8f bc 8f", "b6 4f bc 4f"), # both go dark (less green)
+        ))
