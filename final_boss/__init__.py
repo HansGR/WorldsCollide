@@ -26,12 +26,17 @@ def _grampaluma():
     from final_boss.grampaluma import Grampaluma
     return Grampaluma
 
+def _king_pug():
+    from final_boss.king_pug import KingPug
+    return KingPug
+
 # name (the -fb value) : its class, imported when it is chosen
 _FINAL_BOSSES = {
     KEFKA       : _kefka,
     "ultimaro"  : _ultimaro,
     "uncleulty" : _uncle_ulty,
     "grampaluma": _grampaluma,
+    "kingpug"   : _king_pug,
 }
 NAMES = list(_FINAL_BOSSES)
 

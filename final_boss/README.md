@@ -8,6 +8,7 @@
 | `ultimaro` | Ultimaro: a giant Umaro |
 | `uncleulty` | Uncle Ulty: a giant Ultros |
 | `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
+| `kingpug` | King Pug: a giant Pug (so far only his looks: the battle is final Kefka's) |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Battle programs
