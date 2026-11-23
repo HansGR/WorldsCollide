@@ -1,11 +1,9 @@
 # king pug's sprite (final_boss/king_pug.py shows it at twice this size): pug's at 1.5x, 48x48
 # pixels, with 2 rows above it for his crown
 #
-# the automatic 1.5x of pug's sprite (the scale3x rule, then every 2x2 pixels as one), with these
-# drawn by hand: the knife (a cooking knife, its flat back up and its curved edge down), the lantern
-# (hanging from a ring he holds, with a crenellated top and bottom and a flame in its glass) and the
-# crown (after the tonberry king's: gold for the near points and the band, darker for the far
-# points between them)
+# the automatic 1.5x of pug's sprite (the scale3x rule, then every 2x2 pixels as one), with a crown
+# drawn by hand at that size, so its pixels are as large as his (after the tonberry king's: gold
+# for the near points and the band, darker for the far points between them)
 #
 # "." is transparent, and 1-f are colors of pug's palette: but d and e, which are the crown's golds
 # (GOLD), the sprite's own being 7 and 8
@@ -40,32 +38,32 @@ PIXELS = [
     "......11cbb668a88cbb688666888a11c66a11111aaaa11.",
     "......11cbb188aaccc668886668aa11c66a1111111aa11.",
     "......11cc11118aaccc6668888aa811ccb81111111121..",
-    "......11cc1171188cccccc688aaf8c11cc61111111111..",
-    "......11c111711888cccc6688aff8c111c66111155551..",
-    "......11c111411166ccbb6888affa61111c6111151151..",
+    "......11cc1171188cccccc688aaf8c11cc611111.111...",
+    "......11c111711888cccc6688aff8c111c661111.11....",
+    "......11c111411166ccbb6888affa61111c61111555....",
     ".......11c11721111cccb66888888611.11111115115111",
-    ".......11111222111111111888866611..1111115115111",
-    "......11912222a4441111111111111111..111115115111",
-    "......11112a77a7115555555555555551...11115555111",
-    "......11122a77a11fffffffffffffff51....1111111111",
-    "11...111cc27772119ffffffffffffff1.....1313333131",
-    "711111111cc77741119fffffffffff551.....1333333331",
-    "111111111c11111111199fffffff5511......1111111111",
-    "11471188bb11111ccc11199ffff511111.....1faaaaaaf1",
-    ".11aa111bbcc666cc1111111111111111.....1faa33aaf1",
-    "11144a111ccc66cc111111111ccccc11111...1fa3ff3af1",
-    "11144a211c116cc111111111ccbcc666b111.11fa3ff3af1",
-    ".11aa44471166c3aa6c11111ccbbb66a366b111faa33aaf1",
-    "111a44111166333aa6c11111111111111111111faaaaaaf1",
-    "114441111bb66333af3366c1111111111111111111111111",
-    "117111111bb66333aaa336cc1111111.......1333333331",
-    "11111111111111111111111111111.........1313333131",
-    "111....1111111111111111111............1.111111.1",
+    ".......11111222111111111888866611..1111111111111",
+    "......11912222a4441111111b6666c11...113a11a11aa3",
+    "......11112a77a711195551111bbb11.....11113333111",
+    "......11122a77a11999555511111111......1111111111",
+    "11...111cc2777211999555555911111......f.11111..f",
+    "711111111cc7774111fffff555555111......faaf33faaf",
+    "111111111c11111111fffffff5555991......faa3333aaf",
+    "11471188bb11111cccffffffffff55911.....faa3aa3aaf",
+    ".11aa111bbcc666cc11111111ccccc111.....faaf11faaf",
+    "11144a111ccc66cc111111111ccccc11111...111f11f111",
+    "11144a211c116cc111111111ccbcc666b111.1111.cc1111",
+    ".11aa44471166c3aa6c11111ccbbb66a366b113a11111aa3",
+    "111a44111166333aa6c11111111111111111111111111113",
+    "114441111bb66333af3366c111111111111111111333311.",
+    "117111111bb66333aaa336cc1111111......11111111111",
+    "11111111111111111111111111111.........1111111111",
+    "111....1111111111111111111.............111111...",
 ]
 
 GOLD = {13 : (20, 12, 2), 14 : (31, 23, 4)}     # palette index : (r, g, b), 0 to 31
 TRANSPARENT = "."
-GLASS_CENTER = (43, 43)     # the middle of the lantern's glass: left of this column, above this row
+GLASS_CENTER = (43, 40)     # the middle of the lantern's glass: left of this column, above this row
 
 def pixels():
     # rows of palette indices, 0 is transparent
