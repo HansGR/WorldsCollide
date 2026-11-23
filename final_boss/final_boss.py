@@ -150,6 +150,72 @@ class FinalBoss:
             (landing_script & 0xffff).to_bytes(2, "little"),
         )
 
+    def experience_damage_mod(self, data, attack):
+        # an attack does damage by its target (this is its special effect, in the place of any it had): the character's
+        # experience divided by the attack's power, whatever the defenses, as step mine's is the
+        # steps divided by its power (a level 45 character has 234808 experience, a level 60 one
+        # 561528). against a monster it is as it was
+        # called once for each target hit: y = the target. 8 bit a, x and y
+        from data.ability_data import AbilityData
+        EFFECT = 9                              # in the attack's data
+        TARGET_EFFECTS = 0x23dcd                # what to call for each target, by special effect
+        STRIKE_EFFECTS = 0x242e1
+        FREE_EFFECT = 0x45                      # does nothing for each target, or for each strike
+        NOTHING, NOTHING_FOR_STRIKE = 0x388c, 0x3e8a
+        DIVIDE = 0x4792                         # a (16 bit) / x: a = the quotient, x = the remainder
+        FIRST_ENEMY = 8
+
+        damage_modifiers, damage, power = 0x3414, 0x11b0, 0x11a6
+        character_data, experience = 0x3010, 0x1611     # the target's offset to its character's data
+        high, low = 0xee, 0xf0
+
+        effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
+        pointer = TARGET_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer, pointer + 1) == list(NOTHING.to_bytes(2, "little")), "the effect is in use"
+        pointer_for_strike = STRIKE_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer_for_strike, pointer_for_strike + 1) == list(NOTHING_FOR_STRIKE.to_bytes(2, "little"))
+        data.rom.set_bytes(effect, [FREE_EFFECT])
+
+        src = [
+            asm.CPY(FIRST_ENEMY, asm.IMM8),
+            asm.BGE("RETURN"),
+            asm.STZ(damage_modifiers, asm.ABS),     # ignore damage modifiers
+            asm.AXY16(),
+            asm.LDX(character_data, asm.ABS_Y),
+            asm.LDA(experience + 1, asm.ABS_X),     # its high 2 bytes
+            asm.STA(high, asm.DIR),
+            asm.A8(),
+            asm.LDA(experience, asm.ABS_X),
+            asm.STA(low, asm.DIR),
+            asm.XY8(),
+
+            # as step mine: 65535 if it is more than 2 bytes
+            asm.A16(),
+            asm.TDC(),
+            asm.DEC(),
+            asm.STA(damage, asm.ABS),
+            asm.LDA(high, asm.DIR),
+            asm.LDX(power, asm.ABS),
+            asm.JSR(DIVIDE, asm.ABS),
+            asm.A8(),
+            asm.XBA(),
+            asm.BNE("RETURN"),
+            asm.TXA(),
+            asm.XBA(),
+            asm.STA(damage + 1, asm.ABS),
+            asm.LDA(low, asm.DIR),
+            asm.LDX(power, asm.ABS),
+            asm.JSR(DIVIDE, asm.ABS),
+            asm.STA(damage, asm.ABS),
+
+            "RETURN",
+            asm.AXY8(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: damage by experience")
+        Reserve(pointer, pointer + 1, "final boss: damage by experience pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
+
     def party_statuses_mod(self, data, attack, statuses_byte, statuses):
         # an attack (which has no special effect) also sets these statuses on every enemy in the
         # battle, each time it is used, whether it hits or not: statuses_byte is 0 to 3 (0x08 of byte

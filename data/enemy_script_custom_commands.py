@@ -12,6 +12,8 @@ CURE0, CURE1, CURE2, TEK0, TEK1, TEK2, DAMAGE0, DAMAGE1, DAMAGE2, SPECIAL0, SPEC
 JUMP = 0x63
 # and one which throws an item, for scripts which call command_attacks_mod
 THROW = 0x64
+# and one which is the attack for the element the monster is weak to
+WEAKNESS = 0x65
 
 def get_custom_ability_tier(category_tier):
     if category_tier >= 0x55:
@@ -88,18 +90,44 @@ class EnemyScriptCommands:
             asm.JSR(choose_command, asm.ABS),
         )
 
-    def command_attacks_mod(self, attacks):
+    def command_attacks_mod(self, attacks, weakness_attacks = None, no_weakness_attack = None):
         # as jump_attack_mod, for more than the jump: {attack value : (command, its argument)}, so
         # that a script can choose with 0xf0 between its attacks and JUMP: (0x16, 0), or throwing an
         # item, THROW: (0x08, the item) (script command [0xf6, 0x01, ...] does that)
-        # for the scripts which need it (final_boss/grampaluma.py): not part of mod()
+        #
+        # with weakness_attacks (8 attacks, for fire, ice, bolt, poison, wind, pearl, earth and
+        # water), the attack value WEAKNESS is the one for the element the monster is weak to (the
+        # first of them), or no_weakness_attack: what master pug does after wallchange
+        # for the scripts which need it (final_boss/): not part of mod()
+        # a = the attack, y = the monster. 8 bit a, x and y
         CHOOSE_ATTACK_COMMAND = 0x1dbf      # a = command to use the attack in a with, b = the attack
+        weak_elements = 0x3be0
 
         src = []
         for index, attack in enumerate(attacks):
             src += [
                 asm.CMP(attack, asm.IMM8),
                 asm.BEQ(f"COMMAND_{index}"),
+            ]
+        if weakness_attacks is not None:
+            assert len(weakness_attacks) == 8
+            table = Write(Bank.C2, weakness_attacks, "enemy script attacks by weakness")
+            src += [
+                asm.CMP(WEAKNESS, asm.IMM8),
+                asm.BNE("CHOOSE"),
+                asm.LDA(weak_elements, asm.ABS_Y),
+                asm.LDX(0x00, asm.IMM8),
+                "ELEMENT",
+                asm.LSR(),
+                asm.BCS("WEAK"),
+                asm.INX(),
+                asm.CPX(len(weakness_attacks), asm.IMM8),
+                asm.BNE("ELEMENT"),
+                asm.LDA(no_weakness_attack, asm.IMM8),
+                asm.BRA("CHOOSE"),
+                "WEAK",
+                asm.LDA(table.start_address_snes, asm.LNG_X),
+                "CHOOSE",
             ]
         src += [
             asm.JMP(CHOOSE_ATTACK_COMMAND, asm.ABS),

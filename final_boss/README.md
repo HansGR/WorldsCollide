@@ -8,7 +8,7 @@
 | `ultimaro` | Ultimaro: a giant Umaro |
 | `uncleulty` | Uncle Ulty: a giant Ultros |
 | `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
-| `kingpug` | King Pug: a giant Pug (so far only his looks: the battle is final Kefka's) |
+| `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Battle programs
@@ -169,6 +169,51 @@ A ChromeFist is a Scrapper (the highest of the enemies with the Iron Fist's look
 ### How his script is made
 
 A script is blocks: each turn, from the top, the first block whose conditions are all true is the monster's turn. What Dadaluma does (the call, the heal, the Wing Edge) is blocks before final Kefka's, so they are tested every turn. A block that ends a turn also has the script start over, which for final Kefka's is Fallen One, so each of them ends with a condition that is never true: what is before it is done, and the turn goes on with final Kefka's script where it was. The hits are counted the same way where his script answers being hit, before what final Kefka's does there.
+
+## King Pug
+
+Pug (the green one) at 3x the size of his sprite (96x96 pixels), low enough on the screen to be clear of the boxes at the top.
+
+**Stats:** final Kefka's, with +0 levels, 0.8x speed, 1.2x vigor (the power of his blows: Battle and Cleaver) and 65535 HP (1.057x). Absorbs water, as the pugs do, until his first WallChange.
+
+### Battle program
+
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
+1. "......", and he charges up as the laughing head appears
+2. Grudge
+3. Meteor
+
+**At 53% HP and below:**
+1. "......", and he charges up as the laughing head appears
+2. Grudge
+3. Cleaver / Life Mine / Lullaby, then Cleaver / nothing / nothing
+4. Train / Cleaver / Lullaby, then Cleaver / Cleaver / nothing
+
+**Above 53% HP:**
+1. WallChange
+2. Battle / nothing / Cleaver
+3. Weakness spell / Train / Cleaver
+4. Battle / nothing / Cleaver
+5. Life Mine / Train / Cleaver
+6. Battle / nothing / Cleaver
+7. Stop / nothing / Cleaver
+
+**When he is hit** (not while he charges up or in the turns after Grudge):
+- Below 17% HP, when damaged: nothing / Battle / Ultima
+- Below 49% HP, when damaged: nothing / Battle / Life Mine
+
+**When he dies:** the final death, and every enemy goes with him.
+
+### Attacks
+
+- **Cleaver** is Havoc Wing (his special: a blow at 4x damage), renamed. The pugs' own Cleaver is 8x.
+- **WallChange**, on himself, in the place of Fallen One: he is weak to one element (chosen at random each time), takes no damage from the other seven, and absorbs one of those. Attacks with no element are as they were.
+- **Weakness spell** is the spell Master Pug casts for the element he is weak to: fire Ice 3, ice Fire 3, bolt W Wind, poison Pearl, wind Bolt 3, pearl Bio, earth CleanSweep, water Quake. Before his first WallChange it is Battle. (`WEAKNESS` in `data/enemy_script_custom_commands.py`: an attack value a script can choose as it does attacks.)
+- **Life Mine** is an attack of its own (in the place of Confusion, which nothing in the game uses, as Grampaluma's Sweep is: a seed has one final boss): Step Mine's looks, on one character, for that character's experience / 64, whatever the defenses. 1067 at level 30, 3668 at level 45, 8773 at level 60, and 9999 from level 63 on (`experience_damage_mod`). A character who joins at a level has that level's experience.
+- **Lullaby** is Revenger remade: the Sleep spell on the whole party with a hit rate of 90 (the spell's is 111), which Reflect and Runic do not stop.
+- **Stop** is the spell, on one character.
+- **Grudge** is Goner, renamed.
+- From final Kefka's script: WallChange was Fallen One, the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
 
 ## How a final boss is made
 
