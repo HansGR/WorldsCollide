@@ -4,12 +4,12 @@ import graphics.king_pug as king_pug_sprite
 from final_boss.final_boss import FinalBoss, DAMAGED
 
 class KingPug(FinalBoss):
-    # pug (the green one), giant and crowned: big, slow, and he hits hard. final kefka's script with
+    # pug (the green one), giant and crowned: big, and he hits hard. final kefka's script with
     # the spell for his weakness as master pug casts it, stop, a lullaby (sleep on the whole party)
     # and life mine: step mine by the target's experience. damaged by an attack with an element, he answers
     # with wallchange
     NAME = "King Pug"
-    SPEED, VIGOR = 0.8, 1.2                 # of final kefka's
+    SPEED, VIGOR = 1.0, 1.2                 # of final kefka's
     HP = 2 ** 16 - 1                        # the most an enemy can have
 
     PUG = "Pug"
