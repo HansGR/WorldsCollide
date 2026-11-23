@@ -172,7 +172,7 @@ A script is blocks: each turn, from the top, the first block whose conditions ar
 
 ## King Pug
 
-Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sprite is Pug's at 1.5x (`graphics/king_pug.py`, 48x48 pixels: scale3x, then every 2x2 pixels as one) shown at 2x, so its pixels are as large as Ultimaro's. Its black outline, 2 pixels wide at 1.5x, is taken down to 1. The crown is drawn by hand at the 1.5x size, so its pixels are as large as his: two golds that take the place of two colors of Pug's palette, whose pixels have the nearest of his others (the brighter for the near points and the band, the darker for the far points between them).
+Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sprite is Pug's at 1.5x (`graphics/king_pug.py`, 48x48 pixels: scale3x, then every 2x2 pixels as one) shown at 2x, so its pixels are as large as Ultimaro's. The crown is drawn by hand at the 1.5x size, so its pixels are as large as his: two golds that take the place of two colors of Pug's palette, whose pixels have the nearest of his others (the brighter for the near points and the band, the darker for the far points between them).
 
 **Stats:** final Kefka's, with +0 levels, 1.0x speed, 1.2x vigor (the power of his blows: Battle and Cleaver) and 65535 HP (1.057x). Absorbs water, as the pugs do, until his first WallChange.
 
