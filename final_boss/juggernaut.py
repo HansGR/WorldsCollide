@@ -1,6 +1,6 @@
 from memory.space import Reserve, Read
 
-from final_boss.final_boss import FinalBoss
+from final_boss.final_boss import FinalBoss, ABILITY_DATA_START
 
 SPECIAL_ATTACK_GRAPHICS = 0xf37c0           # the blow an enemy's special attack is shown with, a byte for each enemy
 
@@ -9,6 +9,8 @@ class Juggernaut(FinalBoss):
     # with much more defense and less magic defense, weak to bolt and water as tunnelarmr is
     #
     #   Havoc Wing  Drill, with the looks of tunnelarmr's
+    #   Goner       Soul Burn: it takes from mp what it takes from hp
+    #   Revenger    (tekbarrier, the armors' own, in its place: safe and reflect for him)
     NAME = "Juggernaut"
     DEFENSE, MAGIC_DEFENSE = 1.8, 0.75      # of final kefka's
 
@@ -25,7 +27,17 @@ class Juggernaut(FinalBoss):
 
     # hit by magic: one of these, at any hp
     MAGIC, X_MAGIC, LORE, SUMMON = 0x02, 0x17, 0x0c, 0x19       # commands
-    MAGIC_ANSWERS = ["Diffuser", "Atomic Ray", "Tek Laser"]
+    MAGIC_ANSWERS = ["Missile", "Diffuser", "Atomic Ray"]
+
+    ABILITY_NAMES = {
+        "Goner"     : "Soul Burn",
+    }
+    GONER_TEXT = "Soul furnace igniting...<wait 60 frames><end>"
+    SOUL_BURN_POWER = 30                    # 3x rasp's
+    SOUL_BURN_EFFECT = 0x47                 # a special effect that does nothing
+    POWER_BYTE = 6                          # in an attack's data
+
+    TEK_BARRIER, LAUNCHER = "TekBarrier", "Launcher"
     HIT_BY_COMMAND, NOT_CHARGING = 0x01, 0x15                   # script conditions
 
     def enemies_mod(self, enemies):
@@ -36,6 +48,8 @@ class Juggernaut(FinalBoss):
         juggernaut.defense = min(round(juggernaut.defense * self.DEFENSE), 2 ** 8 - 1)
         juggernaut.magic_defense = min(round(juggernaut.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         juggernaut.weak_elements |= self.BOLT | self.WATER
+        juggernaut.status_immunities.safe = 0           # for his tekbarrier (safe and reflect): final kefka is protected from both
+        juggernaut.status_immunities.reflect = 0
 
     def scripts_mod(self, scripts):
         # (his battle program is written out in final_boss/README.md: keep it up to date with this)
@@ -50,6 +64,13 @@ class Juggernaut(FinalBoss):
         script.replace(ai_instr.RandomAttack(name_id["Fire 3"], train, special), ai_instr.RandomAttack(fire, train, special))
         script.replace(ai_instr.RandomAttack(name_id["Ice 3"], train, special), ai_instr.RandomAttack(ice, train, special))
         script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special), ai_instr.RandomAttack(bolt, nothing, special))
+
+        # at 53% hp and below, the turns after goner (soul burn): tekbarrier for revenger, and the
+        # launcher in one roll of the last
+        revenger, tek_barrier, launcher = (name_id[name] for name in ["Revenger", self.TEK_BARRIER, self.LAUNCHER])
+        script.replace(ai_instr.RandomAttack(special, train, revenger), ai_instr.RandomAttack(special, train, tek_barrier))
+        script.replace(ai_instr.RandomAttack(train, special, revenger), ai_instr.RandomAttack(train, special, tek_barrier))
+        script.replace(ai_instr.RandomAttack(special, special, nothing), ai_instr.RandomAttack(special, launcher, nothing))
 
         # hit by a spell (magic, x-magic, a lore or an esper): he answers, before what else he does
         # when he is hit and after what he does when he dies. not while he charges up, as kefka's
@@ -66,6 +87,17 @@ class Juggernaut(FinalBoss):
             ]
         script.insert(counters + 1, answer)
 
+    def data_mod(self, data):
+        from data.spell_names import name_id
+
+        self.rename_abilities(data, self.ABILITY_NAMES)
+        self.goner_text_mod(data, self.GONER_TEXT)
+
+        # soul burn: goner with 3x the power of rasp, which takes as much from mp as from hp
+        goner = ABILITY_DATA_START + name_id["Goner"] * 14
+        data.rom.set_bytes(goner + self.POWER_BYTE, [self.SOUL_BURN_POWER])
+        self.mp_damage_mod(data, name_id["Goner"], self.SOUL_BURN_EFFECT)
+
     def battle_mod(self):
         self.giant_sprite_mod(self.tunnel_armor, self.SHADOW_COLOR, self.SHADOW_ROWS,
                               scale = self.SCALE, lower = self.LOWER)
@@ -74,3 +106,8 @@ class Juggernaut(FinalBoss):
         graphic = Read(SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor, SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor)
         space = Reserve(SPECIAL_ATTACK_GRAPHICS + self.enemy_id, SPECIAL_ATTACK_GRAPHICS + self.enemy_id, "final kefka special attack graphic")
         space.write(graphic)
+
+        # he charges up before soul burn as final kefka does before goner, without the laughing head:
+        # it is a picture of nothing
+        HEAD_PIXELS, PALETTE_COLORS = 32, 8
+        self.goner_sprite_mod([[0] * HEAD_PIXELS for _ in range(HEAD_PIXELS)], [0] * PALETTE_COLORS)

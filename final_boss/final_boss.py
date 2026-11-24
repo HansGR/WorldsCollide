@@ -731,6 +731,55 @@ class FinalBoss:
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
 
+    def mp_damage_mod(self, data, attack, free_effect = 0x47):
+        # an attack (which has no special effect) also takes from its targets' mp what it takes from
+        # their hp: where hp damage is dealt, the same is taken from mp for this attack, which is
+        # known by a special effect that does nothing (free_effect: 0x45 to 0x47)
+        # y = the target. 16 bit a
+        from data.ability_data import AbilityData
+        EFFECT = 9                              # in the attack's data
+        NO_EFFECT = 0xff
+        DEAL_HP_DAMAGE_START, DEAL_HP_DAMAGE_END = 0x21323, 0x21325
+        HEALED_MINUS_DAMAGE = 0x13a7            # a = healing - damage (zero flag: none, carry: healing)
+        attack_effect, mp, damage = 0x11a9, 0x3c08, 0xee    # (the effect * 2)
+
+        effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
+        assert data.rom.get_bytes(effect, 1)[0] == NO_EFFECT, "the attack has a special effect"
+        data.rom.set_bytes(effect, [free_effect])
+
+        src = [
+            asm.JSR(HEALED_MINUS_DAMAGE, asm.ABS),
+            asm.PHP(),
+            asm.BEQ("RETURN"),
+            asm.BGE("RETURN"),
+            asm.PHA(),
+            asm.EOR(0xffff, asm.IMM16),
+            asm.INC(),
+            asm.STA(damage, asm.DIR),
+            asm.LDA(attack_effect, asm.ABS),
+            asm.AND(0x00ff, asm.IMM16),
+            asm.CMP(free_effect * 2, asm.IMM16),
+            asm.BNE("NOT_THIS_ATTACK"),
+            asm.LDA(mp, asm.ABS_Y),
+            asm.SEC(),
+            asm.SBC(damage, asm.DIR),
+            asm.BGE("SET_MP"),
+            asm.LDA(0x0000, asm.IMM16),
+            "SET_MP",
+            asm.STA(mp, asm.ABS_Y),
+            "NOT_THIS_ATTACK",
+            asm.PLA(),
+            "RETURN",
+            asm.PLP(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: mp damage with hp damage")
+
+        hook = Reserve(DEAL_HP_DAMAGE_START, DEAL_HP_DAMAGE_END, "final boss: deal hp damage")
+        hook.write(
+            asm.JSR(space.start_address, asm.ABS),
+        )
+
     def half_damage_mod(self, elements):
         # he takes half the damage of these elements. an enemy's data has the elements it is weak
         # to, absorbs and takes no damage from, and none for half: that is a character's, from

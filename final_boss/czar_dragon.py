@@ -30,8 +30,9 @@ class CzarDragon(FinalBoss):
     WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Quake", "El Nino"
     # he takes half the damage of fire, ice and bolt (the magic a party has most of), absorbs wind
     # (merton, fire and wind, hits both sides: it heals him) and takes the damage of the others:
-    # of poison too, where final kefka takes none. he flies, for good: quake, which hits both
-    # sides, misses him
+    # of poison too, where final kefka takes none. (final kefka flies, and so does every final
+    # boss: what misses those who float, as quake does, misses him. not to be set again with an
+    # enemy's float flag: with it he dies as any monster does, without the final death)
     HALF_ELEMENTS = 0x01 | 0x02 | 0x04
     WIND_ELEMENT, POISON_ELEMENT = 0x10, 0x08
     MERTON, N_CROSS, GIGA_VOLT = "Merton", "N. Cross", "Giga Volt"      # at 53% hp and below
@@ -57,11 +58,6 @@ class CzarDragon(FinalBoss):
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         czar.immune_elements &= ~self.POISON_ELEMENT
-        # float that is not taken away: on a monster that is "dance" among its statuses. (not the
-        # float of its data's last status byte as well: that one is also kept in a byte of the
-        # battle's where it means something else, and with it he dies as any monster does, without
-        # the final death)
-        czar.status_effects.dance = 1
         czar.absorb_elements |= self.WIND_ELEMENT
 
     def scripts_mod(self, scripts):
