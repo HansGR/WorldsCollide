@@ -266,20 +266,20 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 
 TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a formation's 128 pixels wide), without his shadow, and low enough on the screen to be clear of the boxes at the top.
 
-**Stats:** final Kefka's, with +0 levels, 1.8x defense (211: a blow does 0.32x what it does to final Kefka) and 0.75x magic defense (101: a spell does 1.28x). Weak to bolt and water, as TunnelArmr is. Safe and Reflect can be set on him (his own TekBarrier does), where final Kefka is protected from both.
+**Stats:** final Kefka's, with +0 levels, 1.8x defense (211: a blow does 0.32x what it does to final Kefka) and 0.75x magic defense (101: a spell does 1.28x). Weak to bolt and water, as TunnelArmr is.
 
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "Soul furnace igniting...", and he charges up
+1. "MagiTek engine going critical!", and he charges up
 2. Soul Burn
 3. Meteor
 
 **At 53% HP and below:**
-1. "Soul furnace igniting...", and he charges up
+1. "MagiTek engine going critical!", and he charges up
 2. Soul Burn
-3. Drill / Train / TekBarrier, then Drill / nothing / nothing
-4. Train / Drill / TekBarrier, then Drill / Launcher / nothing
+3. Drill / Train / MirrorCast, then Drill / nothing / nothing
+4. Train / Drill / MirrorCast, then Drill / Launcher / nothing
 
 **Above 53% HP:**
 1. Fallen One
@@ -293,7 +293,7 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 **When he is hit:**
 - By Magic, X-Magic, a Lore or an Esper, at any HP (not while he charges up): Missile / Diffuser / Atomic Ray. Nothing else below is done for that hit.
 - Below 17% HP, when damaged (not while he charges up or in the turns after Soul Burn): nothing / Battle / Ultima
-- Below 49% HP, when damaged (the same): nothing / Battle / HyperDrive
+- Below 49% HP, when damaged (the same): nothing / Battle / Crush
 
 **When he dies:** the final death, and every enemy goes with him.
 
@@ -301,11 +301,11 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 
 - **Drill** is Havoc Wing (his special: a blow at 4x damage), with the looks of TunnelArmr's Drill.
 - **Soul Burn** is Goner with a power of 30 (3x Rasp's; Goner's is 220), and it takes from each one's MP what it takes from their HP (`mp_damage_mod`). He charges up before it without Kefka's laughing head.
-- **TekBarrier**, the armors' own, in the place of Revenger: Safe and Reflect on himself. Dispel takes them away, and they wear off.
+- **MirrorCast**, in the place of Revenger: he casts the esper that one of the party has equipped. A character of the party is chosen at random, and the next ones are tried if that one is dead or gone, has no esper, or has one he does not cast: Odin, Raiden, Shoat (they kill or turn to stone), Palidor, Ragnarok and Golem (which would not do to the party what they do for it). With none to cast it is Diffuser. The esper's own attack is named and shown as it is when the party summons it (the esper appears on the party's side), and it is his: it hits the party with his level and magic power, and one that heals or protects does so for him (he is protected from every status, so only the healing takes). (`MIRROR_CAST` in `data/enemy_script_custom_commands.py`. The espers that attack are kept from hitting characters by a flag of their data, which does not hold for him.)
 - **Launcher**, once in the lists: several strikes on the party that each take a part of what HP the one hit has left. It does not kill.
 - **Missile** takes 1/4 of the HP its target has left, and saps.
 - **Atomic Ray** (fire, the whole party), **Shrapnel** (no element) and **Diffuser** (bolt, the whole party) are the armors' attacks, where final Kefka has Fire 3, Ice 3 and Bolt 3.
-- HyperDrive is still final Kefka's.
+- **Crush** is HyperDrive, renamed, with the looks of Io's Crush (`attack_special_animation_mod`).
 
 ## How a final boss is made
 

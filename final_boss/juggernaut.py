@@ -10,7 +10,8 @@ class Juggernaut(FinalBoss):
     #
     #   Havoc Wing  Drill, with the looks of tunnelarmr's
     #   Goner       Soul Burn: it takes from mp what it takes from hp
-    #   Revenger    (tekbarrier, the armors' own, in its place: safe and reflect for him)
+    #   HyperDrive  Crush, with the looks of io's
+    #   Revenger    (mirrorcast in its place: he casts the esper that one of the party has equipped)
     NAME = "Juggernaut"
     DEFENSE, MAGIC_DEFENSE = 1.8, 0.75      # of final kefka's
 
@@ -30,26 +31,35 @@ class Juggernaut(FinalBoss):
     MAGIC_ANSWERS = ["Missile", "Diffuser", "Atomic Ray"]
 
     ABILITY_NAMES = {
-        "Goner"     : "Soul Burn",
+        "Goner"         : "Soul Burn",
+        "HyperDrive"    : "Crush",
     }
-    GONER_TEXT = "Soul furnace igniting...<wait 60 frames><end>"
+    GONER_TEXT = "MagiTek engine going critical!<wait 60 frames><end>"
     SOUL_BURN_POWER = 30                    # 3x rasp's
     SOUL_BURN_EFFECT = 0x47                 # a special effect that does nothing
     POWER_BYTE = 6                          # in an attack's data
 
-    TEK_BARRIER, LAUNCHER = "TekBarrier", "Launcher"
+    LAUNCHER = "Launcher"
+    IO = "Io"                               # crush is his special attack
+
+    # mirrorcast: the espers he does not cast (odin and raiden kill, as the game leaves them out of
+    # its own random esper, and shoat turns to stone; palidor has the caster's side jump; ragnarok
+    # changes its target into an item; golem's wall is the party's whoever calls it), and what he
+    # does if there is none to cast
+    NO_MIRROR_CASTS = {"Odin" : 11, "Raiden" : 12, "Shoat" : 5, "Palidor" : 9, "Ragnarok" : 16, "Golem" : 22}
+    NO_MIRROR_CAST = "Diffuser"
+
     HIT_BY_COMMAND, NOT_CHARGING = 0x01, 0x15                   # script conditions
 
     def enemies_mod(self, enemies):
         self.tunnel_armor = enemies.get_enemy(self.TUNNEL_ARMOR)
+        self.io = enemies.get_enemy(self.IO)
         juggernaut = self.enemy(enemies)
         juggernaut.name = self.NAME
         juggernaut.special_name = self.SPECIAL_NAME
         juggernaut.defense = min(round(juggernaut.defense * self.DEFENSE), 2 ** 8 - 1)
         juggernaut.magic_defense = min(round(juggernaut.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         juggernaut.weak_elements |= self.BOLT | self.WATER
-        juggernaut.status_immunities.safe = 0           # for his tekbarrier (safe and reflect): final kefka is protected from both
-        juggernaut.status_immunities.reflect = 0
 
     def scripts_mod(self, scripts):
         # (his battle program is written out in final_boss/README.md: keep it up to date with this)
@@ -65,11 +75,14 @@ class Juggernaut(FinalBoss):
         script.replace(ai_instr.RandomAttack(name_id["Ice 3"], train, special), ai_instr.RandomAttack(ice, train, special))
         script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special), ai_instr.RandomAttack(bolt, nothing, special))
 
-        # at 53% hp and below, the turns after goner (soul burn): tekbarrier for revenger, and the
+        # at 53% hp and below, the turns after goner (soul burn): mirrorcast for revenger, and the
         # launcher in one roll of the last
-        revenger, tek_barrier, launcher = (name_id[name] for name in ["Revenger", self.TEK_BARRIER, self.LAUNCHER])
-        script.replace(ai_instr.RandomAttack(special, train, revenger), ai_instr.RandomAttack(special, train, tek_barrier))
-        script.replace(ai_instr.RandomAttack(train, special, revenger), ai_instr.RandomAttack(train, special, tek_barrier))
+        from data.enemy_script_custom_commands import MIRROR_CAST
+        scripts.enemy_script_custom_commands.command_attacks_mod(
+            {}, mirror_cast = (list(self.NO_MIRROR_CASTS.values()), name_id[self.NO_MIRROR_CAST], self.enemy_id))
+        revenger, launcher = name_id["Revenger"], name_id[self.LAUNCHER]
+        script.replace(ai_instr.RandomAttack(special, train, revenger), ai_instr.RandomAttack(special, train, MIRROR_CAST))
+        script.replace(ai_instr.RandomAttack(train, special, revenger), ai_instr.RandomAttack(train, special, MIRROR_CAST))
         script.replace(ai_instr.RandomAttack(special, special, nothing), ai_instr.RandomAttack(special, launcher, nothing))
 
         # hit by a spell (magic, x-magic, a lore or an esper): he answers, before what else he does
@@ -91,7 +104,7 @@ class Juggernaut(FinalBoss):
         from data.spell_names import name_id
 
         self.rename_abilities(data, self.ABILITY_NAMES)
-        self.goner_text_mod(data, self.GONER_TEXT)
+        self.goner_text_mod(data, self.GONER_TEXT, room = True)
 
         # soul burn: goner with 3x the power of rasp, which takes as much from mp as from hp
         goner = ABILITY_DATA_START + name_id["Goner"] * 14
@@ -106,6 +119,10 @@ class Juggernaut(FinalBoss):
         graphic = Read(SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor, SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor)
         space = Reserve(SPECIAL_ATTACK_GRAPHICS + self.enemy_id, SPECIAL_ATTACK_GRAPHICS + self.enemy_id, "final kefka special attack graphic")
         space.write(graphic)
+
+        # crush (hyperdrive) is shown as io's special attack is
+        from data.spell_names import name_id
+        self.attack_special_animation_mod(name_id["HyperDrive"], self.io)
 
         # he charges up before soul burn as final kefka does before goner, without the laughing head:
         # it is a picture of nothing

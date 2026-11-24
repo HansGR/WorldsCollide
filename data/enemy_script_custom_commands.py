@@ -14,6 +14,8 @@ JUMP = 0x63
 THROW = 0x64
 # and one which is the attack for the element the monster is weak to
 WEAKNESS = 0x65
+# and one which is the esper of a character of the party, for scripts which call command_attacks_mod with mirror_cast
+MIRROR_CAST = 0x66
 
 def get_custom_ability_tier(category_tier):
     if category_tier >= 0x55:
@@ -90,7 +92,7 @@ class EnemyScriptCommands:
             asm.JSR(choose_command, asm.ABS),
         )
 
-    def command_attacks_mod(self, attacks, weakness_attacks = None, no_weakness_attack = None):
+    def command_attacks_mod(self, attacks, weakness_attacks = None, no_weakness_attack = None, mirror_cast = None):
         # as jump_attack_mod, for more than the jump: {attack value : (command, its argument)}, so
         # that a script can choose with 0xf0 between its attacks and JUMP: (0x16, 0), or throwing an
         # item, THROW: (0x08, the item) (script command [0xf6, 0x01, ...] does that)
@@ -98,6 +100,14 @@ class EnemyScriptCommands:
         # with weakness_attacks (8 attacks, for fire, ice, bolt, poison, wind, pearl, earth and
         # water), the attack value WEAKNESS is the one for the element the monster is weak to (the
         # first of them), or no_weakness_attack: what master pug does after wallchange
+        #
+        # with mirror_cast (espers not to cast, the attack if there is none to cast, the enemy who casts), the attack value
+        # MIRROR_CAST is the esper that one of the party has equipped: a character of the party is
+        # chosen, and the next ones are tried if that one is not there, has no esper or has one
+        # of those not to cast. (an esper's attack in a script is summoned as it is: 0x36 and up)
+        # the espers that attack are not to hit characters (a flag of their data: "abort on
+        # characters", which takes the characters out of an attack's targets), so that does not hold
+        # for this enemy
         # for the scripts which need it (final_boss/): not part of mod()
         # a = the attack, y = the monster. 8 bit a, x and y
         CHOOSE_ATTACK_COMMAND = 0x1dbf      # a = command to use the attack in a with, b = the attack
@@ -128,6 +138,77 @@ class EnemyScriptCommands:
                 "WEAK",
                 asm.LDA(table.start_address_snes, asm.LNG_X),
                 "CHOOSE",
+            ]
+        if mirror_cast is not None:
+            RANDOM = 0x4b65                 # 0 to a - 1
+            FIRST_ESPER_ATTACK = 0x36
+            CHARACTERS = 4
+            character_bit, present, esper = 0x3018, 0x3a74, 0x3344
+            no_espers, no_esper_attack, caster = mirror_cast
+
+            # x = the attacker (8 and up are the enemies). 8 bit a, x and y
+            ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END = 0x25905, 0x2590a
+            FIRST_ENEMY = 8
+            target_flags, character_targets, enemy_ids = 0xba, 0xb8, 0x33a8
+            abort = Write(Bank.C2, [
+                asm.LDA(target_flags, asm.DIR),
+                asm.BPL("RETURN"),                  # not abort on characters
+                asm.CPX(FIRST_ENEMY, asm.IMM8),
+                asm.BLT("ABORT"),
+                asm.A16(),
+                asm.LDA(enemy_ids, asm.ABS_X),
+                asm.CMP(caster, asm.IMM16),
+                asm.A8(),
+                asm.BEQ("NO_ABORT"),
+                "ABORT",
+                asm.STZ(character_targets, asm.DIR),
+                "NO_ABORT",
+                asm.LDA(target_flags, asm.DIR),
+                "RETURN",
+                asm.RTS(),
+            ], "enemy script mirror cast: abort on characters")
+            space = Reserve(ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END, "abort on characters", asm.NOP())
+            space.write(
+                asm.JSR(abort.start_address, asm.ABS),
+            )
+
+            src += [
+                asm.CMP(MIRROR_CAST, asm.IMM8),
+                asm.BNE("NOT_MIRROR_CAST"),
+                asm.PHY(),
+                asm.LDA(CHARACTERS, asm.IMM8),
+                asm.JSR(RANDOM, asm.ABS),
+                asm.ASL(),
+                asm.TAY(),
+                asm.LDX(CHARACTERS, asm.IMM8),
+                "CHARACTER",
+                asm.LDA(character_bit, asm.ABS_Y),
+                asm.BIT(present, asm.ABS),
+                asm.BEQ("NEXT_CHARACTER"),          # not there, or dead
+                asm.LDA(esper, asm.ABS_Y),
+                asm.BMI("NEXT_CHARACTER"),          # none equipped
+            ]
+            for no_esper in no_espers:
+                src += [
+                    asm.CMP(no_esper, asm.IMM8),
+                    asm.BEQ("NEXT_CHARACTER"),
+                ]
+            src += [
+                asm.CLC(),
+                asm.ADC(FIRST_ESPER_ATTACK, asm.IMM8),
+                asm.BRA("MIRROR_CAST"),
+                "NEXT_CHARACTER",
+                asm.INY(),
+                asm.INY(),
+                asm.TYA(),
+                asm.AND(CHARACTERS * 2 - 1, asm.IMM8),
+                asm.TAY(),
+                asm.DEX(),
+                asm.BNE("CHARACTER"),
+                asm.LDA(no_esper_attack, asm.IMM8),
+                "MIRROR_CAST",
+                asm.PLY(),
+                "NOT_MIRROR_CAST",
             ]
         src += [
             asm.JMP(CHOOSE_ATTACK_COMMAND, asm.ABS),
