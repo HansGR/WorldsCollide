@@ -3949,3 +3949,14 @@ The sixth custom final boss on branch `final-boss` (`-fb juggernaut`, `final_bos
 - **Clear on a boss needs the vanish/doom fix**: a target with Clear is hit by any spell before the check of its protection from instant death (C2/220D). `FinalBoss.FIX_VANISH_DOOM` turns `bug_fixes/vanish_doom.py` on for such a boss whatever the flags say.
 - **The game's Golem is the party's whoever calls it**: its effect (C2/3F65) stores the target's HP in `$3A36`, and the wall only takes the blows of Fight on a single character (C2/2272: `CPY #$08`). `golem_mod(hp)` gives a monster caster a wall of its own, kept in script variables 2-3 (`$3EB2`; no script of the final battle uses them): where an attack's damage to a target is known and physical attacks are told apart (C2/0C2D: `LDA $11A2 / LSR`, damage in `$F0`, Y the target), a physical attack on him takes its damage from the wall and does 0, which is what is shown.
 - A palette by ranges: TunnelArmr's colours 3-7 are his purple body, 8-11 and 14 his olive wheels and claws, 12 and 15 the red mark. Greys by brightness with a blue tint (x0.85 for dark chrome, x1.25 for bright) and the reds left alone.
+
+### How a summon hides the party (2026-11)
+
+- Four things take the party off the screen during a summon, and all four had to be left alone for his MirrorCast before the characters showed:
+  - `$61BD + 0x20 * n`, a byte per character (0x30 as it is, 0x20 while fading, 0x00 behind everything): set for all four by animation command 0xA8 (C1/D45C, value after the command), by C1/E746 (value at the script's place), by C1/9673 (0x20) and by C1/92FB (0x00, in the summon's own routine).
+  - `$62BF`: nonzero stops the characters' palettes from being set each frame, so a fade of their colours holds (command 0xA6, C1/D493; also the fade routines C1/91DC and C1/920C, which still run and are the dark flicker that is left).
+  - **`$62BD`: nonzero and the characters are not drawn at all** (read at C1/29B1; command 0xA7, C1/D48B). This was the one that mattered.
+- The animation script commands are bytes 0x80 and up, dispatched through the table at C1/C884 by (command - 0x80); `0x83 nn` dispatches through a second table (C1/D9E3).
+- **How it was found:** snapshots of all of WRAM before, during and after the summon, keeping the addresses that were equal before and after and different during (378 of them), then the bankC1 listing for who writes each candidate. Two candidates looked right and were not; logging the candidates every frame against the frames where the party was gone picked `$62BD`.
+- The bit that says "his summon" (`$3F2E` bit 7) is now also set or cleared where every summon is named as it is carried out (the hook at C2/368E), so a summon of the party's between his choice and his cast is not taken for his.
+- Not done: the hit effects of an esper are still shown on the monster's side (his flash with Ramuh). They are written into each esper's script.
