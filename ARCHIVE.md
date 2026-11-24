@@ -3864,3 +3864,54 @@ The fourth custom final boss on branch `final-boss` (`-fb kingpug`, `final_boss/
 - A reverted look is kept by `git revert` (the original commit stays in history to revert back to), not by deleting history.
 - To check a counter in the emulator: hold the boss at full HP and the party at full HP every step, mash Fight, and count how often a character's HP drops; compare with the build before the change (`uc_counter.py` in the scratch battletest directory).
 - When a user reports "X never happens", read the built script first (`script.py` dump): the cause here was vanilla behaviour, not a bug in the new block.
+
+## CzarDragon: Elements, Float, Drain, and a Sprite From a Picture (2026-11)
+
+The fifth custom final boss on branch `final-boss` (`-fb czardragon`, `final_boss/czar_dragon.py`): the game's unused boss with the highest attack of each of the eight elements, Megiddo (Goner plus a random status), Terror (a party drain). His battle program is in `final_boss/README.md`. This adds to the final boss sections above.
+
+### The unused enemy
+
+- CzarDragon is enemy 311: level 83, 60001 HP, an empty script. Its graphics spec is the Blue Dragon's sprite (64x96, large mold 5) with a palette of its own (0x21e: black, red, gold). The boss here uses final Kefka's enemy as every final boss does; 311 only gives `giant_sprite_mod` a 4bpp large-mold spec to copy.
+- The highest attack of each element an enemy can use on the party: Fire 3 (121), Ice 3 (122), Bolt 3 (120), Bio (53), Aero (125, whole party), Pearl (108), Quake (111), and for water El Nino (61, whole party, not dodged): there is no water spell. Stronger variants used at low HP: Merton (138, fire and wind), Giga Volt (110), N. Cross (freezes, no damage).
+- Quake and Merton have targeting byte 0x04: **everyone on both sides**, the caster too. Magnitude8 (100) is earth on the party only. Quake, Magnitude8, Terrato and Slide have special effect 0x25: they miss a target with Float.
+
+### Elemental properties
+
+- A monster's data has three element bytes: absorb (0x17), no damage (0x18), weak (0x19). The battle has a fourth for every combatant, **half damage** (`$3BE1,Y`, the high byte of the weak word), which the damage routine (C2/0BF2-C2/0C1E) honours for anyone, but only equipment ever fills it (C2/2907). The order of the checks is absorb, no damage, half, weak: the first that matches wins, so an attack of two elements one of which is absorbed heals.
+- `half_damage_mod(elements)` gives the final boss half-damage elements: where a monster's weak elements are loaded (C2/2DC9, 10 bytes, 8 bit A, X = monster * 32, Y = its place in the battle) it jumps to code in bank F0 that does the same and, for the final boss's enemy, also sets `$3BE1,Y`.
+- Final Kefka takes no damage from poison (0x08 in byte 0x18). A boss meant to take it must clear that.
+
+### Float on a monster: use the status, not the flag
+
+- A monster's data has float twice: "Dance" in status byte 3 (bit 0), which the loader turns into Float **that is not taken away**, and bit 7 of the last status byte (`enemy.float`), a float that Dispel removes.
+- **Setting `enemy.float` on the final boss broke the final death**: he vanished as an ordinary monster does, with no crumbling. That bit is also copied into `$3E4C,Y` (C2/2D7x: `AND #$82`), where bit 7 is evidently not float. With `status_effects.dance = 1` alone he has Float (`$3EF9` bit 7), Quake misses him and the death is right.
+- Found by bisecting in the emulator: the build before the change, then each of the two settings alone. `uc_death4.py` (scratch) kills the boss and takes frames; counting non-black pixels 192 frames later tells the two deaths apart.
+
+### Drain (Terror)
+
+- An attack drains by flag 0x02 of flags 3 (the Drain spell: flags 1 0x08, which turns it around on the undead; flags 3 0x02). Copying Drain's data into Revenger's slot with Revenger's targets (0x6a, all of the other side) gives a party drain with Revenger's animation; the caster gets the sum of what each target loses, target by target.
+- It is ordinary magic damage: the caster's level and magic power and the attack's power, halved for more than one target, then the target's magic defense ((255 - mdef) / 256), Shell, and Morph. Defense, row, Safe and magic block (with the "not dodged" flag) do nothing.
+- **Caps (C2/0DED): no more than the target's HP, and no more than the HP the drainer is missing.** At full HP a drain does nothing. Against an undead target (Relic Ring, Zombie) it is turned around: the target is healed and the caster loses.
+- Measured on a 9999 HP test party (not level 45), per character: power 60 about 660, 80 about 850, 100 about 1100.
+
+### A random status per target (Megiddo)
+
+- `random_status_mod(data, attack, statuses)`: a per-target special effect (0x45) that picks one of 8 (status byte, bit) pairs with the game's RANDOM (C2/4B65) and ORs it into "status to set" (`$3DD4`, `$3DD5`, `$3DE8`), masked by what the target is not protected from (`$331C` + byte).
+- Bank C2 has little room: the C2 part is only `LDA #8 / JSR RANDOM / JSL / RTS`, and the table and the rest are in bank F0 (the data bank is 7E there too, so `abs,Y` still reaches battle memory; the table is read with a long address).
+
+### A sprite from a picture
+
+- The sprite is the one a later release gave him, from a picture the user supplied: a lossy WebP at 2x. Steps (scratch `convert.py`): find the 2x grid by the offset with the least variation inside 2x2 blocks, average each block, keep pixels at alpha 128 and over, reduce to 15 colours, crop to its bounds, write `graphics/czar_dragon.py` (rows of hex digits and a 5 bit palette). 118x111: it fits a formation's 128 pixels at its own size.
+- **Reduce colours with k-means seeded by the colours farthest apart**, not a median cut: on a lossy picture the median cut spent its colours on the noise in the dark greys and lost the reds and yellows.
+- An uploaded file is untrusted: it was copied into a directory of its own and read with `python3 -I`.
+- Unlike the other bosses, whose sprites are read from the ROM when a seed is built, this puts another release's art in the repository as pixel data. The user chose that; say so when it comes up.
+- The picture shown before Goner (`goner_sprite_mod`) can also go up: `move = (1, -1)` is 16 left and 16 up. The battle draws a sprite's first row at screen y 16 + `lower` and its first column at x 16 + `right`, which gives where in the 32x32 picture a feature of the sprite is; check it in a zoomed screenshot with a grid before drawing.
+
+### Battle text
+
+- The line before Goner is one of the battle's one-line texts, which share a fixed space. A line of 32 letters (the most the box holds) overflowed it by 5 bytes: `goner_text_mod(..., room = True)` empties four unused lines of Vargas to make room.
+
+### Process
+
+- When the user pastes a list back to change part of it, other lines in the paste may be stale (an old quote was in one): change what was asked and say what was left alone.
+- A stat asked for can have a consequence the user did not ask for (full earth damage with Quake in the script). Make the smallest change that keeps the request true, say what it was, and offer the alternative; here the user had a better one (make him fly).
