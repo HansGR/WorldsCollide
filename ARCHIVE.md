@@ -3881,10 +3881,11 @@ The fifth custom final boss on branch `final-boss` (`-fb czardragon`, `final_bos
 - `half_damage_mod(elements)` gives the final boss half-damage elements: where a monster's weak elements are loaded (C2/2DC9, 10 bytes, 8 bit A, X = monster * 32, Y = its place in the battle) it jumps to code in bank F0 that does the same and, for the final boss's enemy, also sets `$3BE1,Y`.
 - Final Kefka takes no damage from poison (0x08 in byte 0x18). A boss meant to take it must clear that.
 
-### Float on a monster: use the status, not the flag
+### Float on a monster: final Kefka already has it (I had this wrong)
 
 - A monster's data has float twice: "Dance" in status byte 3 (bit 0), which the loader turns into Float **that is not taken away**, and bit 7 of the last status byte (`enemy.float`), a float that Dispel removes.
-- **Setting `enemy.float` on the final boss broke the final death**: he vanished as an ordinary monster does, with no crumbling. That bit is also copied into `$3E4C,Y` (C2/2D7x: `AND #$82`), where bit 7 is evidently not float. With `status_effects.dance = 1` alone he has Float (`$3EF9` bit 7), Quake misses him and the death is right.
+- **Final Kefka has "Dance" set: he, and so every final boss made from him, already flies for good** (`$3EF9` bit 7 in battle). Quake, Magnitude8 and the like (special effect 0x25) never hit a final boss, his own included. I did not check this before giving CzarDragon Quake: I first made him take no earth damage, then swapped Quake for Magnitude8, then "made him fly" by setting a status he had all along. None of it was needed. **Read the enemy's statuses and flags before working around what an attack would do to him.**
+- **Setting `enemy.float` on the final boss broke the final death**: he vanished as an ordinary monster does, with no crumbling. That bit is also copied into `$3E4C,Y` (C2/2D7x: `AND #$82`), where bit 7 is evidently not float. Leave it alone.
 - Found by bisecting in the emulator: the build before the change, then each of the two settings alone. `uc_death4.py` (scratch) kills the boss and takes frames; counting non-black pixels 192 frames later tells the two deaths apart.
 
 ### Drain (Terror)
@@ -3915,3 +3916,16 @@ The fifth custom final boss on branch `final-boss` (`-fb czardragon`, `final_bos
 
 - When the user pastes a list back to change part of it, other lines in the paste may be stale (an old quote was in one): change what was asked and say what was left alone.
 - A stat asked for can have a consequence the user did not ask for (full earth damage with Quake in the script). Make the smallest change that keeps the request true, say what it was, and offer the alternative; here the user had a better one (make him fly).
+
+## Juggernaut: Command Counters, MP Damage, and Checking an Attack Before Describing It (2026-11)
+
+The sixth custom final boss on branch `final-boss` (`-fb juggernaut`, `final_boss/juggernaut.py`): a giant TunnelArmr with 1.8x defense and 0.75x magic defense who answers spells. His battle program is in `final_boss/README.md`.
+
+- **Counter by command:** script condition FC 01 takes two command ids and is true when the monster was hit by either (Prometheus: `If 1 0 0` Fight, `If 1 2 2` Magic). Magic 0x02, X-Magic 0x17, Lore 0x0C, Summon 0x19: two blocks cover them. Blitz, SwdTech, Tools and Throw are other commands and are not counted.
+- **Final Kefka is protected from every status**, the good ones too. For a boss to buff himself the immunity has to be cleared (`status_immunities.safe = 0`): the cast otherwise does nothing, silently. An ally spell from a script with no SetTarget, or after `SetTarget(0x47)`, lands on himself.
+- **TekBarrier is Safe and Reflect, not Safe and Shell.** Its status byte is 0xC0 of byte 3: dance 01, regen 02, slow 04, haste 08, stop 10, shell 20, safe 40, reflect 80. I told the user "Safe and Shell" from the name and built a rationale on it before reading the data. **Read an attack's data bytes before describing what it does.**
+- **MP damage along with HP damage** (`mp_damage_mod`): HP damage is dealt at C2/1323 (`JSR C213A7` returns healing minus damage; zero flag none, carry healing; 16 bit A, Y = target). The hook calls that, and when the current attack's special effect (`$11A9`, which holds the effect **times 2**: 0x47 is 0x8E there) is the marker, takes the same from `$3C08,Y`, not below 0. Periodic damage (Sap, Poison) loads its own command data, which clears `$11A9`, so it does not take MP: checked with Sap on a character between two casts.
+- A marker special effect only needs the attack-data byte: 0x45 to 0x47 point at "do nothing" in both effect tables, so nothing has to be written there.
+- **Fraction-of-HP attacks** (flags 3 0x80): Missile (power 4) took 2499 of 9999, 1/4 of current HP, and saps; Launcher (power 8, effect 0x2C, several strikes) took 7499 to 8749 of 9999 in all. Neither kills.
+- Soul Burn at power 30 took 306 to 367 HP and MP from each of a 9999 HP test party.
+- TunnelArmr's sprite is 95x63 with a shadow of outline colour under it (`without_shadow(pixels, 1, 12)`); 4/3 is the most that fits (127 wide).
