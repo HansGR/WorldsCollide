@@ -49,8 +49,10 @@ class Juggernaut(FinalBoss):
     GOLEM_HP = 9999                         # the wall golem makes for him: the damage of physical attacks it takes
 
     # statuses final kefka is protected from and he is not: the party's espers set them on him
-    # with mirrorcast (fenrir, phantom, carbunkl, zoneseek) and the party can
-    STATUSES = ["image", "clear", "reflect", "safe", "shell"]
+    # with mirrorcast (fenrir, phantom, carbunkl, zoneseek, kirin) and the party can
+    STATUSES = ["image", "clear", "reflect", "safe", "shell", "regen", "seizure"]
+    # (regen for kirin. the game takes one of regen and seizure being blocked for both, so he can be
+    # sapped as well)
     FIX_VANISH_DOOM = True                  # (clear, without the fix: a spell that kills would not miss him)
     NO_MIRROR_CAST = "Diffuser"
 
