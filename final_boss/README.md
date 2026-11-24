@@ -228,12 +228,12 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "GRRROOOAAAR!!", and he charges up
+1. "Mwa ha ha... Prepare yourselves!", and he charges up
 2. Megiddo
 3. Meteor
 
 **At 53% HP and below:**
-1. "GRRROOOAAAR!!", and he charges up
+1. "Mwa ha ha... Prepare yourselves!", and he charges up
 2. Megiddo
 3. Fire 3 / Ice 3 / Terror, then Bolt 3 / Bio / nothing
 4. Aero / Quake / Terror, then Pearl / El Nino / Havoc Wing

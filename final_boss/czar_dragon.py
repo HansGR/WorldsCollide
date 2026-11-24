@@ -21,7 +21,7 @@ class CzarDragon(FinalBoss):
         "Goner"     : "Megiddo",
         "Revenger"  : "Terror",
     }
-    GONER_TEXT = "GRRROOOAAAR!!<wait 60 frames><end>"
+    GONER_TEXT = "Mwa ha ha... Prepare yourselves!<wait 60 frames><end>"
 
     # the highest attack of each element that an enemy can use on the party
     FIRE, ICE, BOLT, POISON = "Fire 3", "Ice 3", "Bolt 3", "Bio"
@@ -92,7 +92,7 @@ class CzarDragon(FinalBoss):
         NOT_DODGED = 0x20                       # flags3
 
         self.rename_abilities(data, self.ABILITY_NAMES)
-        self.goner_text_mod(data, self.GONER_TEXT)
+        self.goner_text_mod(data, self.GONER_TEXT, room = True)
 
         self.random_status_mod(data, name_id["Goner"], self.MEGIDDO_STATUSES)
 
