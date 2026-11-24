@@ -46,7 +46,7 @@ class Juggernaut(FinalBoss):
     # mirrorcast: the esper he does not cast (ragnarok changes its target into an item), and what
     # he does if there is none to cast. with palidor he jumps, and lands on one of the party
     NO_MIRROR_CASTS = {"Ragnarok" : 16}
-    GOLEM_HP = 3000                         # the wall golem makes for him: the damage of physical attacks it takes
+    GOLEM_HP = 9999                         # the wall golem makes for him: the damage of physical attacks it takes
 
     # statuses final kefka is protected from and he is not: the party's espers set them on him
     # with mirrorcast (fenrir, phantom, carbunkl, zoneseek) and the party can
