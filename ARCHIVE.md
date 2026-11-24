@@ -3984,6 +3984,12 @@ The sixth custom final boss on branch `final-boss` (`-fb juggernaut`, `final_bos
 - Checked in the emulator: the hand comes up in front of him for each Fight the wall takes, and a party Golem block on a character is frame-for-frame the same with and without the hooks. Not checked: a physical attack that is not Fight (Blitz, Tools, Jump): those animations never go through C1/C01F, so they show 0 damage and no hand, the same as for a character.
 - **How it was found:** log the thread arrays (`$6A2E+X` for X = 0x200-0x27f, the first monster's threads) every frame during a party block to see which script ran, search bank C1 for the write to `$626E`, and read back from there.
 
+### Golem's wall shows its damage: mark the target in `$3A82` (2026-11)
+
+- For a character the game shows the damage Golem took and deals none of it. All of that hangs on `$3A82` = the target Golem took this blow for (0xFF: none; nulled for every strike at C2/317B): C2/13A7 zeroes the damage dealt when it is set (the number shown still comes from `$33D0,Y`), C2/0CD4 works the damage out with a defense of 192, and C2/630B takes `$33D0,Y` from the party's wall `$3A36` when `Y == $3A82`.
+- So for a monster's wall (`golem_mod`): in the physical-damage hook (C2/0C2D) `STY $3A82` when his wall has HP, and hook C2/6316-6322 to take the damage from his wall and not `$3A36` when Y is a monster. The first version zeroed `$F0` there, which showed 0.
+- Soul Flare (`mp_damage_mod(mp_cap = True)`): damage capped to the target's MP by lowering `$33D0,Y` just before C2/13A7 in the deal-HP-damage hook (C2/1323), so the number shown is the capped one.
+
 ### Regen and Seizure are blocked together (2026-11)
 
 - For Kirin's Regen to take on the final boss, both `regen` and `seizure` have to be cleared in `status_immunities`: C2/2675 makes a monster that blocks one of the pair block the other. So a boss with Regen can also be sapped. His Regen heals about 230-250 a tick at 30000 of 62000 HP.
