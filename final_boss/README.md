@@ -193,10 +193,10 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 1. Fallen One
 2. Battle / nothing / Cleaver
 3. Weakness spell / Train / Cleaver
-4. Battle / nothing / Cleaver
+4. Battle / Slow 2 / Cleaver
 5. Life Mine / Train / Cleaver
 6. Battle / nothing / Cleaver
-7. Stop / nothing / Cleaver
+7. Stop / Slow 2 / Cleaver
 
 **When he is hit:**
 - When an attack with an element (a spell, or a weapon with one) damages him: WallChange. Nothing else below is done for that hit. An attack with no element, or one that does him no damage (he takes none from 7 of the 8 elements after a WallChange, and absorbs one), does not.
@@ -214,6 +214,7 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 - **Life Mine** is an attack of its own (in the place of Confusion, which nothing in the game uses, as Grampaluma's Sweep is: a seed has one final boss): Step Mine's looks, on one character, for that character's experience / 64, whatever the defenses. 1067 at level 30, 3668 at level 45, 8773 at level 60, and 9999 from level 63 on (`experience_damage_mod`). A character who joins at a level has that level's experience.
 - **Lullaby** is Revenger remade: the Sleep spell on the whole party with a hit rate of 90 (the spell's is 111), which Reflect and Runic do not stop.
 - **Stop** is the spell, on one character.
+- **Slow 2** is the spell, on the whole party.
 - **Grudge Ray** is Goner, renamed, in green and gold where Goner was red: the background and he turn green, then gold, then green again, and its streaks are gold (`goner_colors_mod`). It may also stop each one it hits: a hit rate of 65 against magic block, rolled for each target, as Uncle Ulty's Gumbo may muddle. Before it his lantern lights up and shines: a picture of its glass lit, with rays (`graphics/lantern_glow.py`), is shown over it in the place of Kefka's laughing head and taken away. The picture can only be put in steps of 16 pixels (`goner_sprite_mod(..., move)`), so he is where in his mold puts the glass under it (`giant_sprite_mod(..., lower, right)`), and the lit glass is 4 pixels below the middle of the picture.
 - From final Kefka's script: the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
 

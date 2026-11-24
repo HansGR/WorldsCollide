@@ -64,6 +64,7 @@ class KingPug(FinalBoss):
 
         special, train, revenger, nothing = (name_id[name] for name in ["Special", "Train", "Revenger", "Nothing"])
         life_mine = name_id[self.LIFE_MINE]
+        slow = name_id["Slow 2"]
         script = scripts.get_script(self.ENEMY)
 
         # above 53% hp, after fallen one
@@ -72,7 +73,11 @@ class KingPug(FinalBoss):
         script.replace(ai_instr.RandomAttack(name_id["Ice 3"], train, special),
                        ai_instr.RandomAttack(life_mine, train, special))
         script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special),
-                       ai_instr.RandomAttack(name_id["Stop"], nothing, special))
+                       ai_instr.RandomAttack(name_id["Stop"], slow, special))
+        # and slow 2 in the second of the three turns of battle, nothing or his special
+        blow = ai_instr.RandomAttack(name_id["Battle"], nothing, special)
+        second = script.instructions.index(blow, script.instructions.index(blow) + 1)
+        script.instructions[second] = ai_instr.RandomAttack(name_id["Battle"], slow, special)
 
         # at 53% hp and below, the turns after goner (grudge; revenger is the lullaby)
         script.replace(ai_instr.RandomAttack(special, train, revenger),
