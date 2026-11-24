@@ -114,6 +114,7 @@ class FinalBoss:
         enemy_ids = 0x33a8
         first_enemy = 8
         monster_x, monster_y = 0x80c3, 0x80cf       # a word for each monster
+        monsters_shown, HIM = 0x61ab, 0x01          # a bit for each monster: he is the formation's first
 
         src = [
             asm.CPX(first_enemy, asm.IMM8),
@@ -126,6 +127,9 @@ class FinalBoss:
             asm.STA(monster_x - first_enemy, asm.ABS_X),
             asm.LDA(position[1], asm.IMM16),
             asm.STA(monster_y - first_enemy, asm.ABS_X),
+            asm.A8(),
+            asm.LDA(HIM, asm.IMM8),                 # not to be seen there before the landing shows him
+            asm.TRB(monsters_shown, asm.ABS),
             "NOT_HIM",
             asm.A8(),
             "JUMPER",

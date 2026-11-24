@@ -36,7 +36,7 @@ class Juggernaut(FinalBoss):
         "Revenger"      : "MirrorCast",     # (what his mirrorcast is named by: he does not use the attack)
     }
     GONER_TEXT = "MagiTek engine going critical!<wait 60 frames><end>"
-    SOUL_BURN_POWER = 30                    # 3x rasp's
+    SOUL_BURN_POWER = 120                   # 12x rasp's
     SOUL_BURN_EFFECT = 0x47                 # a special effect that does nothing
     POWER_BYTE = 6                          # in an attack's data
 
@@ -113,7 +113,7 @@ class Juggernaut(FinalBoss):
         self.rename_abilities(data, self.ABILITY_NAMES)
         self.goner_text_mod(data, self.GONER_TEXT, room = True)
 
-        # soul burn: goner with 3x the power of rasp, which takes as much from mp as from hp
+        # soul burn: goner with 12x the power of rasp, which takes as much from mp as from hp
         goner = ABILITY_DATA_START + name_id["Goner"] * 14
         data.rom.set_bytes(goner + self.POWER_BYTE, [self.SOUL_BURN_POWER])
         self.mp_damage_mod(data, name_id["Goner"], self.SOUL_BURN_EFFECT)
