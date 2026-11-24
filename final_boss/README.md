@@ -264,7 +264,7 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 
 ## Juggernaut
 
-TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a formation's 128 pixels wide), without his shadow, low on the screen, and in chrome: his purple body in dark chrome, his wheels and claws in bright chrome, and the red mark on his nose as it was.
+TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a formation's 128 pixels wide), without his shadow, low on the screen, and in chrome: his purple body in a bluish dark chrome, his wheels and claws in bright chrome, and the red mark on his nose as it was.
 
 **Stats:** final Kefka's, with +0 levels, 1.8x defense (211: a blow does 0.32x what it does to final Kefka) and 0.75x magic defense (101: a spell does 1.28x). Weak to bolt and water, as TunnelArmr is. Image, Clear, Reflect, Safe and Shell can be set on him, by the party or by his own MirrorCast (Fenrir, Phantom, Carbunkl, ZoneSeek), where final Kefka is protected from every status. Since he can be made clear, the seed has the vanish/doom fix whether `-fvd` is set or not: a spell that kills does not get past his protection.
 

@@ -143,15 +143,16 @@ class Juggernaut(FinalBoss):
 
     @staticmethod
     def chrome(palette):
-        # tunnelarmr's palette in chrome: his purple body (colors 3 to 7) in dark chrome, his wheels
-        # and claws (8 to 11, and 14: olive) in bright chrome, a little blue. the red of the mark on
-        # his nose (12 and 15), the white and the dark outline stay
+        # tunnelarmr's palette in chrome: his purple body (colors 3 to 7) in dark chrome, bluish, and
+        # his wheels and claws (8 to 11, and 14: olive) in bright chrome with a little blue. the red
+        # of the mark on his nose (12 and 15), the white and the dark outline stay
         BODY, WHEELS = range(3, 8), [8, 9, 10, 11, 14]
-        DARK, BRIGHT = 0.85, 1.25
-        TINT = (0.94, 0.98, 1.10)
+        DARK, BRIGHT = 0.90, 1.25
+        BODY_TINT, WHEELS_TINT = (0.78, 0.92, 1.38), (0.94, 0.98, 1.10)
         colors = list(palette)
         for index, (red, green, blue) in enumerate(palette):
             if index in BODY or index in WHEELS:
-                brightness = (0.30 * red + 0.59 * green + 0.11 * blue) * (DARK if index in BODY else BRIGHT)
-                colors[index] = tuple(min(max(round(brightness * tint), 0), 31) for tint in TINT)
+                body = index in BODY
+                brightness = (0.30 * red + 0.59 * green + 0.11 * blue) * (DARK if body else BRIGHT)
+                colors[index] = tuple(min(max(round(brightness * tint), 0), 31) for tint in (BODY_TINT if body else WHEELS_TINT))
         return colors
