@@ -10,6 +10,7 @@
 | `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
 | `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
 | `czardragon` | CzarDragon: the game's unused boss, with the highest magic of all eight elements |
+| `juggernaut` | Juggernaut: a giant TunnelArmr, armored against blows, who answers magic |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Battle programs
@@ -260,6 +261,48 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 - **Havoc Wing** is final Kefka's (his special: a blow at 4x damage), in 3 turns of the lists above where Kefka has it in 9.
 - **Megiddo** is Goner, renamed, and it sets one status on each one it hits, chosen for each: Dark, Poison, Imp, Mute, Muddle, Sleep, Slow or Stop, 1/8 each (`random_status_mod`). One who is protected from the status chosen gets none. As he charges up before it his eye flashes and fire comes out of his nostrils: a picture of them (`graphics/czar_fire.py`) is shown over his head in the place of Kefka's laughing head and taken away, as King Pug's lantern lights up.
 - **Terror** is Revenger remade: the Drain spell on the whole party with a power of 100 (the spell's is 38), with Revenger's looks, which Reflect and Runic do not stop and which is not dodged. He gets the HP each one loses.
+
+## Juggernaut
+
+TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a formation's 128 pixels wide), without his shadow, and low enough on the screen to be clear of the boxes at the top.
+
+**A first version**: his stats, his looks, Drill and his answer to magic. Goner, Revenger and HyperDrive are still final Kefka's.
+
+**Stats:** final Kefka's, with +0 levels, 1.8x defense (211: a blow does 0.32x what it does to final Kefka) and 0.75x magic defense (101: a spell does 1.28x). Weak to bolt and water, as TunnelArmr is.
+
+### Battle program
+
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
+1. "The end comes...beyond chaos.", and he charges up
+2. Goner
+3. Meteor
+
+**At 53% HP and below:**
+1. "The end comes...beyond chaos.", and he charges up
+2. Goner
+3. Drill / Train / Revenger, then Drill / nothing / nothing
+4. Train / Drill / Revenger, then Drill / Drill / nothing
+
+**Above 53% HP:**
+1. Fallen One
+2. Battle / nothing / Drill
+3. Atomic Ray / Train / Drill
+4. Battle / nothing / Drill
+5. Shrapnel / Train / Drill
+6. Battle / nothing / Drill
+7. Diffuser / nothing / Drill
+
+**When he is hit:**
+- By Magic, X-Magic, a Lore or an Esper, at any HP (not while he charges up): Diffuser / Atomic Ray / Tek Laser. Nothing else below is done for that hit.
+- Below 17% HP, when damaged (not while he charges up or in the turns after Goner): nothing / Battle / Ultima
+- Below 49% HP, when damaged (the same): nothing / Battle / HyperDrive
+
+**When he dies:** the final death, and every enemy goes with him.
+
+### Attacks
+
+- **Drill** is Havoc Wing (his special: a blow at 4x damage), with the looks of TunnelArmr's Drill.
+- **Atomic Ray** (fire, the whole party), **Shrapnel** (no element) and **Diffuser** (bolt, the whole party) are the armors' attacks, where final Kefka has Fire 3, Ice 3 and Bolt 3. **Tek Laser** is bolt, on one character, and weak.
 
 ## How a final boss is made
 

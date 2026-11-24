@@ -29,6 +29,7 @@ EXTRA_FLAGS = [
     "-fb grampaluma",
     "-fb kingpug",
     "-fb czardragon",
+    "-fb juggernaut",
     "-fb random",
 ]
 

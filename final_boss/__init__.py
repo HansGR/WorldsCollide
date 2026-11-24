@@ -34,6 +34,10 @@ def _czar_dragon():
     from final_boss.czar_dragon import CzarDragon
     return CzarDragon
 
+def _juggernaut():
+    from final_boss.juggernaut import Juggernaut
+    return Juggernaut
+
 # name (the -fb value) : its class, imported when it is chosen
 _FINAL_BOSSES = {
     KEFKA       : _kefka,
@@ -42,6 +46,7 @@ _FINAL_BOSSES = {
     "grampaluma": _grampaluma,
     "kingpug"   : _king_pug,
     "czardragon": _czar_dragon,
+    "juggernaut": _juggernaut,
 }
 NAMES = list(_FINAL_BOSSES)
 
