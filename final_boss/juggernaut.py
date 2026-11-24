@@ -9,7 +9,7 @@ class Juggernaut(FinalBoss):
     # with much more defense and less magic defense, weak to bolt and water as tunnelarmr is
     #
     #   Havoc Wing  Drill, with the looks of tunnelarmr's
-    #   Goner       Soul Burn: it takes from mp what it takes from hp
+    #   Goner       Soul Flare: it takes from mp what it takes from hp, and no more than the mp there is
     #   HyperDrive  Crush, with the looks of io's
     #   Revenger    (mirrorcast in its place: he casts the esper that one of the party has equipped)
     NAME = "Juggernaut"
@@ -31,13 +31,13 @@ class Juggernaut(FinalBoss):
     MAGIC_ANSWERS = ["Missile", "Diffuser", "Atomic Ray"]
 
     ABILITY_NAMES = {
-        "Goner"         : "Soul Burn",
+        "Goner"         : "Soul Flare",
         "HyperDrive"    : "Crush",
         "Revenger"      : "MirrorCast",     # (what his mirrorcast is named by: he does not use the attack)
     }
     GONER_TEXT = "MagiTek engine going critical!<wait 60 frames><end>"
-    SOUL_BURN_POWER = 120                   # 12x rasp's
-    SOUL_BURN_EFFECT = 0x47                 # a special effect that does nothing
+    SOUL_FLARE_POWER = 120                   # 12x rasp's
+    SOUL_FLARE_EFFECT = 0x47                 # a special effect that does nothing
     POWER_BYTE = 6                          # in an attack's data
 
     LAUNCHER = "Launcher"
@@ -117,8 +117,8 @@ class Juggernaut(FinalBoss):
 
         # soul burn: goner with 12x the power of rasp, which takes as much from mp as from hp
         goner = ABILITY_DATA_START + name_id["Goner"] * 14
-        data.rom.set_bytes(goner + self.POWER_BYTE, [self.SOUL_BURN_POWER])
-        self.mp_damage_mod(data, name_id["Goner"], self.SOUL_BURN_EFFECT)
+        data.rom.set_bytes(goner + self.POWER_BYTE, [self.SOUL_FLARE_POWER])
+        self.mp_damage_mod(data, name_id["Goner"], self.SOUL_FLARE_EFFECT, mp_cap = True)
 
     def battle_mod(self):
         self.giant_sprite_mod(self.tunnel_armor, self.SHADOW_COLOR, self.SHADOW_ROWS,

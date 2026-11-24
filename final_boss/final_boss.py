@@ -781,7 +781,8 @@ class FinalBoss:
         # golem's wall for a final boss who calls it (with mirrorcast). the game's wall is the
         # party's whoever calls it: it has the hp of its caster, and it takes the blows of fight
         # on a character. called by a monster it is his: it has this many hp, and while it has
-        # any a physical attack does him no damage and takes its damage from the wall
+        # any a physical attack does him no damage and takes its damage from the wall (the damage is
+        # shown, as for a character)
         #
         # the wall's hp are kept in the battle's script variables 2 and 3, which the scripts of the
         # final battle do not use
@@ -789,7 +790,8 @@ class FinalBoss:
         PHYSICAL_START, PHYSICAL_END = 0x20c2d, 0x20c30  # y = the target. 8 bit a, x and y
         FIRST_ENEMY = 8
         hp, party_golem_hp, his_golem_hp = 0x3bf4, 0x3a36, 0x3eb2
-        attack_flags, damage, enemy_ids = 0x11a2, 0xf0, 0x33a8
+        attack_flags, enemy_ids = 0x11a2, 0x33a8
+        golem_target, damage_taken = 0x3a82, 0x33d0     # the one golem takes this blow for (0xff: none)
 
         assert Read(GOLEM_START, GOLEM_END) == [0xc2, 0x20, 0xb9, 0xf4, 0x3b, 0x8d, 0x36, 0x3a, 0x60]
         golem = Write(Bank.F0, [
@@ -830,19 +832,12 @@ class FinalBoss:
             asm.BCC("RETURN"),                      # not physical
             asm.A16(),
             asm.LDA(his_golem_hp, asm.ABS),
-            asm.BEQ("NO_WALL"),
-            asm.SEC(),
-            asm.SBC(damage, asm.DIR),
-            asm.BGE("WALL"),
-            asm.LDA(0x0000, asm.IMM16),
-            "WALL",
-            asm.STA(his_golem_hp, asm.ABS),
-            asm.STZ(damage, asm.DIR),
             asm.A8(),
-            asm.LDA(BLOCKED, asm.IMM8),
+            asm.BEQ("NO_WALL"),
+            asm.STY(golem_target, asm.ABS),         # as the game does for a character: the damage
+            asm.LDA(BLOCKED, asm.IMM8),             # is shown, and it is not taken from his hp
             asm.TSB(blocked, asm.ABS),
             "NO_WALL",
-            asm.A8(),
             asm.SEC(),
             asm.RTL(),
             "AS_IT_IS",
@@ -854,6 +849,36 @@ class FinalBoss:
         space = Reserve(PHYSICAL_START, PHYSICAL_END, "physical attack damage")
         space.write(
             asm.JSL(physical.start_address_snes),
+        )
+
+        # where the damage shown is taken from the wall of the one golem took the blow for: his own
+        # y = the target. 16 bit a, 8 bit x and y
+        WALL_START, WALL_END = 0x26316, 0x26322
+        assert Read(WALL_START, WALL_END) == [0x38, 0xad, 0x36, 0x3a, 0xf9, 0xd0, 0x33, 0xb0, 0x01, 0x7b, 0x8d, 0x36, 0x3a]
+        wall = Write(Bank.F0, [
+            asm.CPY(FIRST_ENEMY, asm.IMM8),
+            asm.BGE("HIS"),
+            asm.LDA(party_golem_hp, asm.ABS),
+            asm.SEC(),
+            asm.SBC(damage_taken, asm.ABS_Y),
+            asm.BGE("PARTY_WALL"),
+            asm.LDA(0x0000, asm.IMM16),
+            "PARTY_WALL",
+            asm.STA(party_golem_hp, asm.ABS),
+            asm.RTL(),
+            "HIS",
+            asm.LDA(his_golem_hp, asm.ABS),
+            asm.SEC(),
+            asm.SBC(damage_taken, asm.ABS_Y),
+            asm.BGE("HIS_WALL"),
+            asm.LDA(0x0000, asm.IMM16),
+            "HIS_WALL",
+            asm.STA(his_golem_hp, asm.ABS),
+            asm.RTL(),
+        ], "final boss: golem's wall takes the damage shown")
+        space = Reserve(WALL_START, WALL_END, "golem's wall takes damage", asm.NOP())
+        space.write(
+            asm.JSL(wall.start_address_snes),
         )
 
         # golem's hand. when fight is shown and its target is a character who dodges or blocks (a
@@ -928,10 +953,11 @@ class FinalBoss:
             asm.JSL(at.start_address_snes),
         )
 
-    def mp_damage_mod(self, data, attack, free_effect = 0x47):
+    def mp_damage_mod(self, data, attack, free_effect = 0x47, mp_cap = False):
         # an attack (which has no special effect) also takes from its targets' mp what it takes from
         # their hp: where hp damage is dealt, the same is taken from mp for this attack, which is
         # known by a special effect that does nothing (free_effect: 0x45 to 0x47)
+        # mp_cap: it does no more damage than the target has mp
         # y = the target. 16 bit a
         from data.ability_data import AbilityData
         EFFECT = 9                              # in the attack's data
@@ -971,11 +997,30 @@ class FinalBoss:
             asm.RTL(),
         ]
         mp_damage = Write(Bank.F0, src, "final boss: mp damage with hp damage")
-        space = Write(Bank.C2, [
+        call = [
             asm.JSR(HEALED_MINUS_DAMAGE, asm.ABS),
             asm.JSL(mp_damage.start_address_snes),
             asm.RTS(),
-        ], "final boss: mp damage with hp damage call")
+        ]
+        if mp_cap:
+            damage_taken, NONE = 0x33d0, 0xffff
+            cap = Write(Bank.F0, [
+                asm.LDA(attack_effect, asm.ABS),
+                asm.AND(0x00ff, asm.IMM16),
+                asm.CMP(free_effect * 2, asm.IMM16),
+                asm.BNE("RETURN"),
+                asm.LDA(damage_taken, asm.ABS_Y),
+                asm.CMP(NONE, asm.IMM16),
+                asm.BEQ("RETURN"),
+                asm.CMP(mp, asm.ABS_Y),
+                asm.BLT("RETURN"),
+                asm.LDA(mp, asm.ABS_Y),
+                asm.STA(damage_taken, asm.ABS_Y),
+                "RETURN",
+                asm.RTL(),
+            ], "final boss: damage no more than mp")
+            call = [asm.JSL(cap.start_address_snes)] + call
+        space = Write(Bank.C2, call, "final boss: mp damage with hp damage call")
 
         hook = Reserve(DEAL_HP_DAMAGE_START, DEAL_HP_DAMAGE_END, "final boss: deal hp damage")
         hook.write(

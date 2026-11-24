@@ -272,12 +272,12 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
 1. "MagiTek engine going critical!", and he charges up
-2. Soul Burn
+2. Soul Flare
 3. Meteor
 
 **At 53% HP and below:**
 1. "MagiTek engine going critical!", and he charges up
-2. Soul Burn
+2. Soul Flare
 3. Drill / Train / MirrorCast, then Drill / nothing / nothing
 4. Train / Drill / MirrorCast, then Drill / Launcher / nothing
 
@@ -292,7 +292,7 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 
 **When he is hit:**
 - By Magic, X-Magic, a Lore or an Esper, at any HP (not while he charges up): Missile / Diffuser / Atomic Ray. Nothing else below is done for that hit.
-- Below 17% HP, when damaged (not while he charges up or in the turns after Soul Burn): nothing / Battle / Ultima
+- Below 17% HP, when damaged (not while he charges up or in the turns after Soul Flare): nothing / Battle / Ultima
 - Below 49% HP, when damaged (the same): nothing / Battle / Crush
 
 **When he dies:** the final death, and every enemy goes with him.
@@ -300,8 +300,8 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 ### Attacks
 
 - **Drill** is Havoc Wing (his special: a blow at 4x damage), with the looks of TunnelArmr's Drill.
-- **Soul Burn** is Goner with a power of 120 (12x Rasp's; Goner's is 220), and it takes from each one's MP what it takes from their HP (`mp_damage_mod`). He charges up before it without Kefka's laughing head.
-- **MirrorCast**, in the place of Revenger: he casts the esper that one of the party has equipped. A character of the party is chosen at random, and the next ones are tried if that one is dead or gone, has no esper, or has Ragnarok (which changes its target into an item). With none to cast it is Diffuser. It is named MirrorCast at the top of the screen (as the Magicite item names itself and not its esper), and the esper is shown as it is to a party attacked from behind: on his side. The party stays where it is while his esper is there (a summon hides the party; its colors still flicker dark as the esper comes and goes). It is his: it hits the party with his level and magic power, and one that heals or protects does so for him: Fenrir's Image, Phantom's Clear, Carbunkl's Reflect, ZoneSeek's Shell and Kirin's Regen take. With Golem he has a wall of his own: it has 9999 HP, and while it has any a physical attack does him 0 damage and takes its damage from the wall, and Golem's hand comes up in front of him to take a Fight (`golem_mod`; the game's wall is the party's, whoever calls it). Odin and Raiden kill and Shoat turns to stone whoever is not protected. With Palidor he is carried off, and he lands on one of the party in a later turn (`carried_jump_mod`). (`MIRROR_CAST` in `data/enemy_script_custom_commands.py`. The espers that attack are kept from hitting characters by a flag of their data, which does not hold for him.)
+- **Soul Flare** is Goner with a power of 120 (12x Rasp's; Goner's is 220), and it takes from each one's MP what it takes from their HP, which is no more than the MP they have: one with 300 MP loses 300 HP and 300 MP, and one with 0 MP loses nothing (`mp_damage_mod` with `mp_cap`). He charges up before it without Kefka's laughing head.
+- **MirrorCast**, in the place of Revenger: he casts the esper that one of the party has equipped. A character of the party is chosen at random, and the next ones are tried if that one is dead or gone, has no esper, or has Ragnarok (which changes its target into an item). With none to cast it is Diffuser. It is named MirrorCast at the top of the screen (as the Magicite item names itself and not its esper), and the esper is shown as it is to a party attacked from behind: on his side. The party stays where it is while his esper is there (a summon hides the party; its colors still flicker dark as the esper comes and goes). It is his: it hits the party with his level and magic power, and one that heals or protects does so for him: Fenrir's Image, Phantom's Clear, Carbunkl's Reflect, ZoneSeek's Shell and Kirin's Regen take. With Golem he has a wall of his own: it has 9999 HP, and while it has any a physical attack takes its damage from the wall and not from his HP, the damage the wall took is shown on him (as for a character, it is worked out with a defense of 192 in place of his own), and Golem's hand comes up in front of him to take a Fight (`golem_mod`; the game's wall is the party's, whoever calls it). Odin and Raiden kill and Shoat turns to stone whoever is not protected. With Palidor he is carried off, and he lands on one of the party in a later turn (`carried_jump_mod`). (`MIRROR_CAST` in `data/enemy_script_custom_commands.py`. The espers that attack are kept from hitting characters by a flag of their data, which does not hold for him.)
 - **Launcher**, once in the lists: several strikes on the party that each take a part of what HP the one hit has left. It does not kill.
 - **Missile** takes 1/4 of the HP its target has left, and saps.
 - **Atomic Ray** (fire, the whole party), **Shrapnel** (no element) and **Diffuser** (bolt, the whole party) are the armors' attacks, where final Kefka has Fire 3, Ice 3 and Bolt 3.
@@ -327,7 +327,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 - `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy, giant and in that enemy's palette: at twice its size if that fits the 128x128 pixels of a large mold (a monster with a small mold, up to 64x64 pixels, does), or else as large as fits (Dadaluma, 88 pixels wide, is 1.45 times his size), or at `scale = (factor, divisor)`. The enemy needs 4bpp graphics. A shadow under its feet can be removed.
 - `giant_sprite_mod(..., pixels = rows, palette = colors)` shows a sprite drawn for him (rows of palette indices) in the place of the enemy's, and 16 colors in the place of the enemy's palette.
 - `giant_sprite_mod(..., lower = pixels)` puts a sprite less high than the mold lower in it, to be clear of the boxes at the top of the screen. His place in the formation is Kefka's, so the death animation is too.
-- `golem_mod(hp, hand = (130, 88))` gives him Golem's wall when he calls it: physical attacks do him no damage until they have done it this much. Golem's hand is shown at `hand` on the screen when the wall takes a Fight (the game only shows it for a character: the Fight animation is given Golem's block for him too, and the hand's place, which the game reads from the character, is given).
+- `golem_mod(hp, hand = (130, 88))` gives him Golem's wall when he calls it: physical attacks do him no damage until they have done it this much (the damage is shown, and taken from the wall). Golem's hand is shown at `hand` on the screen when the wall takes a Fight (the game only shows it for a character: the Fight animation is given Golem's block for him too, and the hand's place, which the game reads from the character, is given).
 - `mp_damage_mod(data, attack)` has an attack take from its targets' MP what it takes from their HP.
 - `half_damage_mod(elements)` has him take half the damage of elements, which an enemy's data has no place for.
 - `random_status_mod(data, attack, statuses)` has an attack also set one of 8 statuses, chosen for each target it hits.
