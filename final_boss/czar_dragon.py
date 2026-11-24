@@ -27,6 +27,9 @@ class CzarDragon(FinalBoss):
     FIRE, ICE, BOLT, POISON = "Fire 3", "Ice 3", "Bolt 3", "Bio"
     WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Quake", "El Nino"
     EARTH_ELEMENT = 0x40                    # quake hits both sides: he takes no damage from earth
+    WIND_ELEMENT = 0x10                     # he absorbs wind (merton, fire and wind, hits both sides too)
+    POISON_ELEMENT = 0x08                   # and takes half the damage of poison, where final kefka takes none
+    MERTON, N_CROSS, GIGA_VOLT = "Merton", "N. Cross", "Giga Volt"      # at 53% hp and below
 
     # megiddo: one of these for each one it hits (status byte 0 to 2, status), unless protected
     MEGIDDO_STATUSES = [
@@ -49,6 +52,8 @@ class CzarDragon(FinalBoss):
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         czar.immune_elements |= self.EARTH_ELEMENT
+        czar.immune_elements &= ~self.POISON_ELEMENT
+        czar.absorb_elements |= self.WIND_ELEMENT
 
     def scripts_mod(self, scripts):
         # (his battle program is written out in final_boss/README.md: keep it up to date with this)
@@ -78,9 +83,9 @@ class CzarDragon(FinalBoss):
 
         # at 53% hp and below, the turns after goner (megiddo; revenger is terror)
         script.replace(ai_instr.RandomAttack(special, train, revenger),
-                       ai_instr.RandomAttack(fire, ice, revenger))
+                       ai_instr.RandomAttack(name_id[self.MERTON], name_id[self.N_CROSS], revenger))
         script.replace(ai_instr.RandomAttack(special, nothing, nothing),
-                       ai_instr.RandomAttack(bolt, poison, nothing))
+                       ai_instr.RandomAttack(name_id[self.GIGA_VOLT], poison, nothing))
         script.replace(ai_instr.RandomAttack(train, special, revenger),
                        ai_instr.RandomAttack(wind, earth, revenger))
         script.replace(ai_instr.RandomAttack(special, special, nothing),
@@ -110,6 +115,7 @@ class CzarDragon(FinalBoss):
         data.rom.set_bytes(revenger, terror.ability_data())
 
     def battle_mod(self):
+        self.half_damage_mod(self.POISON_ELEMENT)
         self.giant_sprite_mod(self.CZAR_DRAGON, pixels = czar_dragon_sprite.pixels(),
                               palette = czar_dragon_sprite.palette(), scale = self.SCALE, lower = self.LOWER)
 

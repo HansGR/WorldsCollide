@@ -731,6 +731,35 @@ class FinalBoss:
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
 
+    def half_damage_mod(self, elements):
+        # he takes half the damage of these elements. an enemy's data has the elements it is weak
+        # to, absorbs and takes no damage from, and none for half: that is a character's, from
+        # equipment (the high byte of $3be0). where a monster's weak elements are loaded, his get
+        # these as well
+        # 8 bit a, 16 bit x (the monster * 32) and y (the monster in the battle)
+        LOAD_WEAK_START, LOAD_WEAK_END = 0x22dc9, 0x22dd2
+        ENEMY_DATA_SIZE = 32
+        weak_data, weak, half = 0xcf0019, 0x3be0, 0x3be1
+
+        src = [
+            asm.LDA(weak_data, asm.LNG_X),
+            asm.ORA(weak, asm.ABS_Y),
+            asm.STA(weak, asm.ABS_Y),
+            asm.CPX(self.enemy_id * ENEMY_DATA_SIZE, asm.IMM16),
+            asm.BNE("RETURN"),
+            asm.LDA(elements, asm.IMM8),
+            asm.ORA(half, asm.ABS_Y),
+            asm.STA(half, asm.ABS_Y),
+            "RETURN",
+            asm.RTL(),
+        ]
+        load = Write(Bank.F0, src, "final boss: half damage elements")
+
+        space = Reserve(LOAD_WEAK_START, LOAD_WEAK_END, "final boss: load weak elements", asm.NOP())
+        space.write(
+            asm.JSL(load.start_address_snes),
+        )
+
     def random_status_mod(self, data, attack, statuses):
         # an attack with no special effect also sets one status on each target it hits: one of
         # these 8 (status byte 0 to 2, status), chosen for each target, and none if the target is
