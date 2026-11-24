@@ -731,6 +731,59 @@ class FinalBoss:
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
 
+    def random_status_mod(self, data, attack, statuses):
+        # an attack with no special effect also sets one status on each target it hits: one of
+        # these 8 (status byte 0 to 2, status), chosen for each target, and none if the target is
+        # protected from the one chosen
+        # called once for each target hit: y = the target. 8 bit a, x and y
+        from data.ability_data import AbilityData
+        EFFECT = 9                              # in the attack's data
+        NO_EFFECT = 0xff
+        TARGET_EFFECTS = 0x23dcd                # what to call for each target, by special effect
+        FREE_EFFECT = 0x45                      # does nothing for each target, or for each strike
+        NOTHING = 0x388c
+        RANDOM = 0x4b65                         # 0 to a - 1
+        vulnerable = 0x331c                     # statuses the target is not protected from (4 bytes)
+        status_to_set = (0x3dd4, 0x3dd5, 0x3de8)
+
+        assert len(statuses) == 8 and all(status_byte < len(status_to_set) for status_byte, _ in statuses)
+        effect = ABILITY_DATA_START + attack * AbilityData.DATA_SIZE + EFFECT
+        assert data.rom.get_bytes(effect, 1)[0] == NO_EFFECT, "the attack has a special effect"
+        pointer = TARGET_EFFECTS + FREE_EFFECT * 2
+        assert Read(pointer, pointer + 1) == list(NOTHING.to_bytes(2, "little")), "the effect is in use"
+        data.rom.set_bytes(effect, [FREE_EFFECT])
+
+        # (bank c2 has little room: the choice is made there, and the rest is in f0)
+        table = Write(Bank.F0, [value for status in statuses for value in status], "final boss: random statuses")
+        src = [
+            asm.ASL(),
+            asm.TAX(),
+            asm.LDA(table.start_address_snes, asm.LNG_X),       # the status byte
+            asm.BEQ("BYTE_0"),
+            asm.DEC(),
+            asm.BEQ("BYTE_1"),
+        ]
+        for status_byte in (2, 1, 0):
+            src += [
+                f"BYTE_{status_byte}",
+                asm.LDA(table.start_address_snes + 1, asm.LNG_X),
+                asm.AND(vulnerable + status_byte, asm.ABS_Y),
+                asm.ORA(status_to_set[status_byte], asm.ABS_Y),
+                asm.STA(status_to_set[status_byte], asm.ABS_Y),
+                asm.RTL(),
+            ]
+        set_status = Write(Bank.F0, src, "final boss: random status")
+
+        src = [
+            asm.LDA(len(statuses), asm.IMM8),
+            asm.JSR(RANDOM, asm.ABS),
+            asm.JSL(set_status.start_address_snes),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: random status choice")
+        Reserve(pointer, pointer + 1, "final boss: random status pointer").write(
+            list((space.start_address & 0xffff).to_bytes(2, "little")))
+
     def status_chance_mod(self, data, attack, status_byte, status, hit_rate):
         # an attack with no special effect also sets this status (0x20 of byte 1 (0 to 3) is muddle)
         # on each target it hits, with a hit rate of its own: the chance is hit rate * (256 - 2 *

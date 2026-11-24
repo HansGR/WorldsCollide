@@ -9,6 +9,7 @@
 | `uncleulty` | Uncle Ulty: a giant Ultros |
 | `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
 | `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
+| `czardragon` | CzarDragon: the game's unused boss, with the highest magic of all eight elements |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Battle programs
@@ -218,6 +219,47 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 - **Grudge Ray** is Goner, renamed, in green and gold where Goner was red: the background and he turn green, then gold, then green again, and its streaks are gold (`goner_colors_mod`). It may also stop each one it hits: a hit rate of 65 against magic block, rolled for each target, as Uncle Ulty's Gumbo may muddle. Before it his lantern lights up and shines: a picture of its glass lit, with rays (`graphics/lantern_glow.py`), is shown over it in the place of Kefka's laughing head and taken away. The picture can only be put in steps of 16 pixels (`goner_sprite_mod(..., move)`), so he is where in his mold puts the glass under it (`giant_sprite_mod(..., lower, right)`), and the lit glass is 4 pixels below the middle of the picture.
 - From final Kefka's script: the weakness spell was Fire 3, the Life Mine above 53% was Ice 3 and Stop was Bolt 3. At 53% and below Life Mine was Train, and when he is hit it was HyperDrive.
 
+## CzarDragon
+
+CzarDragon, a boss the game has an enemy for and never uses. His sprite is the one a later release of the game gave him, with wings and a tail (`graphics/czar_dragon.py`: from a picture of it, 118x111 pixels in 15 colors), shown at its own size, which nearly fills a formation's 128 pixels, and low enough to be clear of the boxes at the top. The enemy's own looks in this game are the Blue Dragon's sprite in a black, red and gold palette (64x96 pixels).
+
+**Stats:** final Kefka's, with +0 levels, 0.9x defense (105) and 1.2x magic defense (162). He takes no damage from earth (his own Quake hits both sides), nor from poison, as final Kefka does not.
+
+### Battle program
+
+**Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
+1. "GRRROOOAAAR!!", and he charges up
+2. Megiddo
+3. Meteor
+
+**At 53% HP and below:**
+1. "GRRROOOAAAR!!", and he charges up
+2. Megiddo
+3. Fire 3 / Ice 3 / Terror, then Bolt 3 / Bio / nothing
+4. Aero / Quake / Terror, then Pearl / El Nino / Havoc Wing
+
+**Above 53% HP:**
+1. Fallen One
+2. Fire 3 / Ice 3 / Bolt 3
+3. Battle / nothing / Havoc Wing
+4. Bio / Aero / Quake
+5. Battle / Train / nothing
+6. Pearl / El Nino / Train
+7. Battle / nothing / Havoc Wing
+
+**When he is hit** (as final Kefka):
+- Below 17% HP, when damaged (not while he charges up or in the turns after Megiddo): nothing / Battle / Ultima
+- Below 49% HP, when damaged (the same): nothing / Battle / HyperDrive
+
+**When he dies:** the final death, and every enemy goes with him.
+
+### Attacks
+
+- **His eight elements**, the highest attack of each that an enemy can use on the party: Fire 3, Ice 3, Bolt 3 and Bio (one character), Pearl (one character), Aero (wind, the whole party), Quake (earth, everyone who does not float: he takes no damage from earth) and El Nino (water, the whole party, not dodged). With ability scaling at random (`-sfb -asr`) these are scaled as final Kefka's spells are and may not keep their elements.
+- **Havoc Wing** is final Kefka's (his special: a blow at 4x damage), in 3 turns of the lists above where Kefka has it in 9.
+- **Megiddo** is Goner, renamed, and it sets one status on each one it hits, chosen for each: Dark, Poison, Imp, Mute, Muddle, Sleep, Slow or Stop, 1/8 each (`random_status_mod`). One who is protected from the status chosen gets none. He charges up before it without Kefka's laughing head.
+- **Terror** is Revenger remade: the Drain spell on the whole party with a power of 60 (the spell's is 38), with Revenger's looks, which Reflect and Runic do not stop and which is not dodged. He gets the HP each one loses.
+
 ## How a final boss is made
 
 Every final boss is final Kefka's enemy (298), in his formation and running his battle script, made over. A final boss is a subclass of `FinalBoss` (`final_boss/final_boss.py`), whose methods are called as the seed is built:
@@ -238,6 +280,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 - `giant_sprite_mod(enemy, shadow_color, shadow_rows)` gives him the sprite of an enemy, giant and in that enemy's palette: at twice its size if that fits the 128x128 pixels of a large mold (a monster with a small mold, up to 64x64 pixels, does), or else as large as fits (Dadaluma, 88 pixels wide, is 1.45 times his size), or at `scale = (factor, divisor)`. The enemy needs 4bpp graphics. A shadow under its feet can be removed.
 - `giant_sprite_mod(..., pixels = rows, palette = colors)` shows a sprite drawn for him (rows of palette indices) in the place of the enemy's, and 16 colors in the place of the enemy's palette.
 - `giant_sprite_mod(..., lower = pixels)` puts a sprite less high than the mold lower in it, to be clear of the boxes at the top of the screen. His place in the formation is Kefka's, so the death animation is too.
+- `random_status_mod(data, attack, statuses)` has an attack also set one of 8 statuses, chosen for each target it hits.
 - `goner_sprite_mod(pixels, palette)` shows a 32x32 picture where Kefka's laughing head appears before Goner.
 - `goner_text_mod(data, text)` is what is said before Goner. A line holds some 32 letters.
 - `special_attack_animation_mod(attack)` gives his special attack (Havoc Wing) the looks and sound of another attack.
