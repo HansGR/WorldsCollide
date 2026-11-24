@@ -777,7 +777,7 @@ class FinalBoss:
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
 
-    def golem_mod(self, golem_hp):
+    def golem_mod(self, golem_hp, hand = (130, 88)):
         # golem's wall for a final boss who calls it (with mirrorcast). the game's wall is the
         # party's whoever calls it: it has the hp of its caster, and it takes the blows of fight
         # on a character. called by a monster it is his: it has this many hp, and while it has
@@ -811,18 +811,24 @@ class FinalBoss:
         )
 
         # where the damage of an attack to a target is known, and a physical attack is told apart
-        # (the carry on return)
+        # (the carry on return). a bit of the battle's memory says that the last attack on him was
+        # taken by the wall, for the hand to be shown
+        blocked, BLOCKED = 0x3f2e, 0x40             # (its low bits: the characters who have used their espers)
         assert Read(PHYSICAL_START, PHYSICAL_END) == [0xad, 0xa2, 0x11, 0x4a]
         physical = Write(Bank.F0, [
-            asm.LDA(attack_flags, asm.ABS),
-            asm.LSR(),
-            asm.BCC("RETURN"),                      # not physical
             asm.CPY(FIRST_ENEMY, asm.IMM8),
-            asm.BLT("PHYSICAL"),
+            asm.BLT("AS_IT_IS"),
             asm.A16(),
             asm.LDA(enemy_ids, asm.ABS_Y),
             asm.CMP(self.enemy_id, asm.IMM16),
-            asm.BNE("NO_WALL"),
+            asm.A8(),
+            asm.BNE("AS_IT_IS"),
+            asm.LDA(BLOCKED, asm.IMM8),
+            asm.TRB(blocked, asm.ABS),
+            asm.LDA(attack_flags, asm.ABS),
+            asm.LSR(),
+            asm.BCC("RETURN"),                      # not physical
+            asm.A16(),
             asm.LDA(his_golem_hp, asm.ABS),
             asm.BEQ("NO_WALL"),
             asm.SEC(),
@@ -832,16 +838,94 @@ class FinalBoss:
             "WALL",
             asm.STA(his_golem_hp, asm.ABS),
             asm.STZ(damage, asm.DIR),
+            asm.A8(),
+            asm.LDA(BLOCKED, asm.IMM8),
+            asm.TSB(blocked, asm.ABS),
             "NO_WALL",
             asm.A8(),
-            "PHYSICAL",
             asm.SEC(),
+            asm.RTL(),
+            "AS_IT_IS",
+            asm.LDA(attack_flags, asm.ABS),
+            asm.LSR(),
             "RETURN",
             asm.RTL(),
         ], "final boss: golem takes the damage of physical attacks")
         space = Reserve(PHYSICAL_START, PHYSICAL_END, "physical attack damage")
         space.write(
             asm.JSL(physical.start_address_snes),
+        )
+
+        # golem's hand. when fight is shown and its target is a character who dodges or blocks (a
+        # byte for each character with the attack: 6 is golem), the animation of the hit is one for
+        # that (a table by the byte), and its graphics are loaded: a monster has no such byte. he is
+        # taken for a target who blocks with golem when the wall took the blow
+        # 8 bit a, 16 bit x and y. $12 = the target (bit 7: a monster, 4 is the first)
+        DODGE_START, DODGE_END = 0x1c01f, 0x1c02e
+        NO_DODGE, LOAD_DODGE = 0xc05c, 0xbeb9
+        GOLEM, HIM = 6, 0x84
+        target, dodges = 0x12, 0x78
+        assert Read(DODGE_START, DODGE_END) == [0xa5, target, 0x30, 0x39, 0x18, 0x69, 0x0a, 0xa8, 0xb1, dodges, 0xf0, 0x31, 0x3a,
+                                                0x20, LOAD_DODGE & 0xff, LOAD_DODGE >> 8]
+        dodge = Write(Bank.F0, [
+            asm.LDA(target, asm.DIR),
+            asm.BMI("MONSTER"),
+            asm.CLC(),
+            asm.ADC(0x0a, asm.IMM8),
+            asm.TAY(),
+            [0xb1, dodges],                         # lda (dodges),y
+            asm.BEQ("NONE"),
+            asm.DEC(),
+            asm.SEC(),
+            asm.RTL(),
+            "MONSTER",
+            asm.CMP(HIM, asm.IMM8),
+            asm.BNE("NONE"),
+            asm.LDA(BLOCKED, asm.IMM8),
+            asm.BIT(blocked, asm.ABS),
+            asm.BEQ("NONE"),
+            asm.LDA(GOLEM - 1, asm.IMM8),
+            asm.SEC(),
+            asm.RTL(),
+            "NONE",
+            asm.CLC(),
+            asm.RTL(),
+        ], "final boss: golem's hand")
+        space = Reserve(DODGE_START, DODGE_END, "fight animation: the target's dodge", asm.NOP())
+        space.add_label("NO_DODGE", NO_DODGE + 0x10000)
+        space.write(
+            asm.JSL(dodge.start_address_snes),
+            asm.BCC("NO_DODGE"),
+            asm.JSR(LOAD_DODGE, asm.ABS),
+        )
+
+        # the hand's animation puts itself where its target is: a character's place (a command of the
+        # animations' scripts, which reads the character's own data). for a monster it is put here:
+        # hand, on the screen (the script then moves it 18 toward the party and 8 down: the default is
+        # in front of a boss whose sprite fills the formation)
+        # x = the animation. 8 bit a, 16 bit x and y
+        AT_TARGET_START, AT_TARGET_END = 0x1c9cc, 0x1c9f5
+        animation_target, sprite_x, sprite_y = 0x6a39, 0x6a3a, 0x6a3c
+        at_target = Read(AT_TARGET_START, AT_TARGET_END)
+        assert at_target[:3] == [0xbd, 0x39, 0x6a] and at_target[-3:] == [0x7b, 0xe2, 0x20]
+        at = Write(Bank.F0, [
+            asm.LDA(animation_target, asm.ABS_X),
+            asm.BMI("MONSTER"),
+            at_target,                              # (ends with 8 bit a)
+            asm.RTL(),
+            "MONSTER",
+            asm.A16(),
+            asm.LDA(hand[0], asm.IMM16),
+            asm.STA(sprite_x, asm.ABS_X),
+            asm.LDA(hand[1], asm.IMM16),
+            asm.STA(sprite_y, asm.ABS_X),
+            asm.TDC(),
+            asm.A8(),
+            asm.RTL(),
+        ], "final boss: golem's hand place")
+        space = Reserve(AT_TARGET_START, AT_TARGET_END, "animation: at the target character", asm.NOP())
+        space.write(
+            asm.JSL(at.start_address_snes),
         )
 
     def mp_damage_mod(self, data, attack, free_effect = 0x47):
