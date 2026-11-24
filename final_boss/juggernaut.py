@@ -20,6 +20,7 @@ class Juggernaut(FinalBoss):
     SHADOW_COLOR, SHADOW_ROWS = 1, 12
     SCALE = (4, 3)                          # his sprite is 95x59 pixels without its shadow: 127 wide is the most that fits
     LOWER = 40                              # pixels: clear of the boxes at the top, and lower still
+    LOGO_MOVE = (3, -2)                     # the glow of his logo, in steps of 16 pixels to the left and down
 
     BOLT, WATER = 0x04, 0x80                # elements
 
@@ -138,10 +139,10 @@ class Juggernaut(FinalBoss):
         from data.spell_names import name_id
         self.attack_special_animation_mod(name_id["HyperDrive"], self.io)
 
-        # he charges up before soul burn as final kefka does before goner, without the laughing head:
-        # it is a picture of nothing
-        HEAD_PIXELS, PALETTE_COLORS = 32, 8
-        self.goner_sprite_mod([[0] * HEAD_PIXELS for _ in range(HEAD_PIXELS)], [0] * PALETTE_COLORS)
+        # he charges up before soul flare as final kefka does before goner. in the place of the
+        # laughing head the logo on his nose glows, and rays go up and to the right from it
+        import graphics.juggernaut_logo as juggernaut_logo
+        self.goner_sprite_mod(juggernaut_logo.pixels(), juggernaut_logo.palette(), self.LOGO_MOVE)
 
     @staticmethod
     def chrome(palette):
