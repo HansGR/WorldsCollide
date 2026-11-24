@@ -3960,3 +3960,9 @@ The sixth custom final boss on branch `final-boss` (`-fb juggernaut`, `final_bos
 - **How it was found:** snapshots of all of WRAM before, during and after the summon, keeping the addresses that were equal before and after and different during (378 of them), then the bankC1 listing for who writes each candidate. Two candidates looked right and were not; logging the candidates every frame against the frames where the party was gone picked `$62BD`.
 - The bit that says "his summon" (`$3F2E` bit 7) is now also set or cleared where every summon is named as it is carried out (the hook at C2/368E), so a summon of the party's between his choice and his cast is not taken for his.
 - Not done: the hit effects of an esper are still shown on the monster's side (his flash with Ramuh). They are written into each esper's script.
+
+### Golem's hand is a character's dodge animation (2026-11, not solved)
+
+- When Golem takes a blow for a character, the hit check (C2/2293) sets a "golem block" flag, C2/23BF picks the block animation and stores it in `$AA + character` (0-3): **one byte per character slot**, sent to the graphics code with the attack. A monster has no such slot, and C2/22BD sends a monster target straight to "miss", so the hand cannot be asked for on a monster through the game's own path.
+- For Juggernaut's wall (`golem_mod`) a blocked physical attack shows as 0 damage and nothing else. Showing the hand on him needs the routine in bank C1 that draws a character's block animation, called for his position; I did not find it (the bankC1 listing has no comments there, and `$7B49,X`, which looked like it, is the damage numbers).
+- A next attempt should start from the block animation itself: set the party's wall (`$3A36`) by hand, have a monster use Battle on a character, and diff WRAM/VRAM while the hand is up to find its graphics and the routine that places them.
