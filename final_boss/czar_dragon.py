@@ -1,4 +1,5 @@
 import graphics.czar_dragon as czar_dragon_sprite
+import graphics.czar_fire as czar_fire
 
 from final_boss.final_boss import FinalBoss, ABILITY_DATA_START
 
@@ -16,6 +17,7 @@ class CzarDragon(FinalBoss):
     CZAR_DRAGON = 311                       # the unused enemy (a dragon, with graphics as his are)
     SCALE = (1, 1)                          # his sprite is 118x111 pixels: as it is
     LOWER = 16                              # pixels: clear of the boxes at the top
+    FIRE_MOVE = (1, -1)                     # the fire: 16 pixels left and 16 up from the laughing head's place
 
     ABILITY_NAMES = {
         "Goner"     : "Megiddo",
@@ -25,11 +27,11 @@ class CzarDragon(FinalBoss):
 
     # the highest attack of each element that an enemy can use on the party
     FIRE, ICE, BOLT, POISON = "Fire 3", "Ice 3", "Bolt 3", "Bio"
-    WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Magnitude8", "El Nino"
+    WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Quake", "El Nino"
     # he takes half the damage of fire, ice and bolt (the magic a party has most of), absorbs wind
     # (merton, fire and wind, hits both sides: it heals him) and takes the damage of the others:
-    # of poison too, where final kefka takes none. (so his earth is magnitude8, which hits the
-    # party only: quake hits both sides)
+    # of poison too, where final kefka takes none. he flies, for good: quake, which hits both
+    # sides, misses him
     HALF_ELEMENTS = 0x01 | 0x02 | 0x04
     WIND_ELEMENT, POISON_ELEMENT = 0x10, 0x08
     MERTON, N_CROSS, GIGA_VOLT = "Merton", "N. Cross", "Giga Volt"      # at 53% hp and below
@@ -55,6 +57,8 @@ class CzarDragon(FinalBoss):
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         czar.immune_elements &= ~self.POISON_ELEMENT
+        czar.float = 1
+        czar.status_effects.dance = 1                   # (on a monster: float that is not taken away)
         czar.absorb_elements |= self.WIND_ELEMENT
 
     def scripts_mod(self, scripts):
@@ -121,7 +125,7 @@ class CzarDragon(FinalBoss):
         self.giant_sprite_mod(self.CZAR_DRAGON, pixels = czar_dragon_sprite.pixels(),
                               palette = czar_dragon_sprite.palette(), scale = self.SCALE, lower = self.LOWER)
 
-        # he charges up before megiddo as final kefka does before goner, without the laughing head:
-        # it is a picture of nothing
-        HEAD_PIXELS, PALETTE_COLORS = 32, 8
-        self.goner_sprite_mod([[0] * HEAD_PIXELS for _ in range(HEAD_PIXELS)], [0] * PALETTE_COLORS)
+        # he charges up before megiddo as final kefka does before goner. for the laughing head, his
+        # eye flashes and fire comes out of his nostrils: a picture of them is shown over his head,
+        # and taken away
+        self.goner_sprite_mod(czar_fire.pixels(), czar_fire.palette(), self.FIRE_MOVE)

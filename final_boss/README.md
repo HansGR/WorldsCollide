@@ -223,26 +223,26 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 
 CzarDragon, a boss the game has an enemy for and never uses. His sprite is the one a later release of the game gave him, with wings and a tail (`graphics/czar_dragon.py`: from a picture of it, 118x111 pixels in 15 colors), shown at its own size, which nearly fills a formation's 128 pixels, and low enough to be clear of the boxes at the top. The enemy's own looks in this game are the Blue Dragon's sprite in a black, red and gold palette (64x96 pixels).
 
-**Stats:** final Kefka's, with +0 levels, 1.2x speed, 0.9x defense (105) and 1.2x magic defense (162). He takes half the damage of fire, ice and bolt, absorbs wind (his own Merton, fire and wind, hits both sides and heals him) and takes the full damage of poison (final Kefka takes none), pearl, earth and water.
+**Stats:** final Kefka's, with +0 levels, 1.2x speed, 0.9x defense (105) and 1.2x magic defense (162). He takes half the damage of fire, ice and bolt, absorbs wind (his own Merton, fire and wind, hits both sides and heals him) and takes the full damage of poison (final Kefka takes none), pearl, earth and water. He flies (Float, which is not taken away), so what misses those who float misses him: his own Quake, which hits both sides, and the party's.
 
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "Mwa ha ha... Prepare yourselves!", and he charges up
+1. "Mwa ha ha... Prepare yourselves!", and he charges up as his eye flashes and fire comes out of his nostrils
 2. Megiddo
 3. Meteor
 
 **At 53% HP and below:**
-1. "Mwa ha ha... Prepare yourselves!", and he charges up
+1. "Mwa ha ha... Prepare yourselves!", and he charges up as his eye flashes and fire comes out of his nostrils
 2. Megiddo
 3. Merton / N. Cross / Terror, then Giga Volt / Bio / nothing
-4. Aero / Magnitude8 / Terror, then Pearl / El Nino / Havoc Wing
+4. Aero / Quake / Terror, then Pearl / El Nino / Havoc Wing
 
 **Above 53% HP:**
 1. Fallen One
 2. Fire 3 / Ice 3 / Bolt 3
 3. Battle / nothing / Havoc Wing
-4. Bio / Aero / Magnitude8
+4. Bio / Aero / Quake
 5. Battle / Train / nothing
 6. Pearl / El Nino / Train
 7. Battle / nothing / Havoc Wing
@@ -255,10 +255,10 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 
 ### Attacks
 
-- **His eight elements**, the highest attack of each that an enemy can use on the party: Fire 3, Ice 3, Bolt 3 and Bio (one character), Pearl (one character), Aero (wind, the whole party), Magnitude8 (earth, the whole party but those who float; Quake, the highest, hits both sides and he takes earth's damage) and El Nino (water, the whole party, not dodged). With ability scaling at random (`-sfb -asr`) these are scaled as final Kefka's spells are and may not keep their elements.
+- **His eight elements**, the highest attack of each that an enemy can use on the party: Fire 3, Ice 3, Bolt 3 and Bio (one character), Pearl (one character), Aero (wind, the whole party), Quake (earth, everyone on both sides who does not float: he does) and El Nino (water, the whole party, not dodged). With ability scaling at random (`-sfb -asr`) these are scaled as final Kefka's spells are and may not keep their elements.
 - **At 53% HP and below** three of them are stronger: Merton (fire and wind, everyone on both sides, not dodged: he absorbs it), N. Cross (ice: it freezes whom it hits, at random among the party, with no damage) and Giga Volt (bolt).
 - **Havoc Wing** is final Kefka's (his special: a blow at 4x damage), in 3 turns of the lists above where Kefka has it in 9.
-- **Megiddo** is Goner, renamed, and it sets one status on each one it hits, chosen for each: Dark, Poison, Imp, Mute, Muddle, Sleep, Slow or Stop, 1/8 each (`random_status_mod`). One who is protected from the status chosen gets none. He charges up before it without Kefka's laughing head.
+- **Megiddo** is Goner, renamed, and it sets one status on each one it hits, chosen for each: Dark, Poison, Imp, Mute, Muddle, Sleep, Slow or Stop, 1/8 each (`random_status_mod`). One who is protected from the status chosen gets none. As he charges up before it his eye flashes and fire comes out of his nostrils: a picture of them (`graphics/czar_fire.py`) is shown over his head in the place of Kefka's laughing head and taken away, as King Pug's lantern lights up.
 - **Terror** is Revenger remade: the Drain spell on the whole party with a power of 100 (the spell's is 38), with Revenger's looks, which Reflect and Runic do not stop and which is not dodged. He gets the HP each one loses.
 
 ## How a final boss is made
