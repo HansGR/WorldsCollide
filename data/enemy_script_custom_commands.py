@@ -159,14 +159,19 @@ class EnemyScriptCommands:
             SUMMON_NAME_START, SUMMON_NAME_END = 0x2368e, 0x23693
             ATTACK_NAME = 0x00
             name_type, attack = 0x3a29, 0xb6
+            # (every summon is named here as it is carried out: the bit is set for his, and cleared for
+            # the party's, which may come between his choice and his summon)
             summon_name = Write(Bank.F0, [
+                asm.LDA(MIRROR_CASTING, asm.IMM8),
                 asm.CPY(FIRST_ENEMY, asm.IMM8),
                 asm.BLT("ESPER"),
+                asm.TSB(mirror_casting, asm.ABS),
                 asm.LDA(ATTACK_NAME, asm.IMM8),
                 asm.STA(name_type, asm.ABS),
                 asm.LDA(name_attack, asm.IMM8),
                 asm.RTL(),
                 "ESPER",
+                asm.TRB(mirror_casting, asm.ABS),
                 asm.SEC(),
                 asm.LDA(attack, asm.DIR),
                 asm.SBC(FIRST_ESPER_ATTACK, asm.IMM8),
@@ -199,6 +204,111 @@ class EnemyScriptCommands:
             space = Reserve(BATTLE_TYPE_START, BATTLE_TYPE_END, "animation battle type", asm.NOP())
             space.write(
                 asm.JSL(battle_type.start_address_snes),
+            )
+
+            # a summon hides the party while the esper is there (how each of the four characters is
+            # shown: 0x30 as it is, 0x00 not at all). for his espers the party stays
+            # 8 bit a
+            HIDE_PARTY_START, HIDE_PARTY_END = 0x192fb, 0x192fe
+            shown = [0x61bd, 0x61dd, 0x61fd, 0x621d]
+            assert Read(HIDE_PARTY_START, HIDE_PARTY_END) == [0x7b, 0x20, 0x5e, 0x92]
+            hide_party = Write(Bank.F0, [
+                asm.LDA(mirror_casting, asm.ABS),
+                asm.BMI("STAYS"),
+                [asm.STZ(character, asm.ABS) for character in shown],
+                "STAYS",
+                asm.TDC(),
+                asm.RTL(),
+            ], "enemy script mirror cast: the party stays")
+            space = Reserve(HIDE_PARTY_START, HIDE_PARTY_END, "summon: hide the party")
+            space.write(
+                asm.JSL(hide_party.start_address_snes),
+            )
+
+            # (before that the party fades out: 0x20, set for the first character and then, with what a
+            # has, for the others)
+            FADE_PARTY_START, FADE_PARTY_END = 0x19673, 0x19677
+            FADING, SHOWN = 0x20, 0x30
+            assert Read(FADE_PARTY_START, FADE_PARTY_END) == [0xa9, FADING, 0x8d, 0xbd, 0x61]
+            fade_party = Write(Bank.F0, [
+                asm.LDA(mirror_casting, asm.ABS),
+                asm.BMI("STAYS"),
+                asm.LDA(FADING, asm.IMM8),
+                asm.BRA("SET"),
+                "STAYS",
+                asm.LDA(SHOWN, asm.IMM8),
+                "SET",
+                asm.STA(shown[0], asm.ABS),
+                asm.RTL(),
+            ], "enemy script mirror cast: the party does not fade")
+            space = Reserve(FADE_PARTY_START, FADE_PARTY_END, "summon: fade the party", asm.NOP())
+            space.write(
+                asm.JSL(fade_party.start_address_snes),
+            )
+
+            # (and two commands of the animations' scripts set it for the four characters, one with its
+            # value after the command and one at the script's place)
+            SHOW_CHARACTERS_START, SHOW_CHARACTERS_END = 0x1d45c, 0x1d45f
+            SET_CHARACTERS_START, SET_CHARACTERS_END = 0x1e746, 0x1e74a
+            assert Read(SHOW_CHARACTERS_START, SHOW_CHARACTERS_END) == [0xb7, 0x5b, 0x85, 0x10]
+            assert Read(SET_CHARACTERS_START, SET_CHARACTERS_END) == [0xa7, 0x5b, 0x8d, 0xbd, 0x61]
+
+            def party_stays(value, rest):
+                return [
+                    asm.LDA(mirror_casting, asm.ABS),
+                    asm.BPL("AS_IT_IS"),
+                    asm.LDA(SHOWN, asm.IMM8),
+                    asm.BRA("SET"),
+                    "AS_IT_IS",
+                    value,                              # the value the script has
+                    "SET",
+                    rest,
+                    asm.RTL(),
+                ]
+            show = Write(Bank.F0, party_stays([0xb7, 0x5b], [0x85, 0x10]), "enemy script mirror cast: the party is shown")
+            space = Reserve(SHOW_CHARACTERS_START, SHOW_CHARACTERS_END, "animation: show characters")
+            space.write(
+                asm.JSL(show.start_address_snes),
+            )
+            show = Write(Bank.F0, party_stays([0xa7, 0x5b], [0x8d, 0xbd, 0x61]), "enemy script mirror cast: the party is set")
+            space = Reserve(SET_CHARACTERS_START, SET_CHARACTERS_END, "animation: set characters", asm.NOP())
+            space.write(
+                asm.JSL(show.start_address_snes),
+            )
+
+            # (and one command stops the characters' palettes from being set, each frame, while their
+            # colors are faded out: for his espers they keep being set)
+            KEEP_PALETTES_START, KEEP_PALETTES_END = 0x1d493, 0x1d497
+            assert Read(KEEP_PALETTES_START, KEEP_PALETTES_END) == [0xb7, 0x5b, 0x8d, 0xbf, 0x62]
+            palettes = Write(Bank.F0, [
+                [0xb7, 0x5b],                           # the value the script has
+                asm.BIT(mirror_casting, asm.ABS),
+                asm.BPL("SET"),
+                asm.LDA(0x00, asm.IMM8),
+                "SET",
+                [0x8d, 0xbf, 0x62],
+                asm.RTL(),
+            ], "enemy script mirror cast: the party's palettes")
+            space = Reserve(KEEP_PALETTES_START, KEEP_PALETTES_END, "animation: characters' palettes", asm.NOP())
+            space.write(
+                asm.JSL(palettes.start_address_snes),
+            )
+
+            # (and one command says whether the characters are drawn at all: for his espers they are)
+            DRAW_CHARACTERS_START, DRAW_CHARACTERS_END = 0x1d48b, 0x1d48f
+            assert Read(DRAW_CHARACTERS_START, DRAW_CHARACTERS_END) == [0xb7, 0x5b, 0x8d, 0xbd, 0x62]
+            drawn = Write(Bank.F0, [
+                [0xb7, 0x5b],                           # the value the script has
+                asm.BIT(mirror_casting, asm.ABS),
+                asm.BPL("SET"),
+                asm.LDA(0x00, asm.IMM8),
+                "SET",
+                [0x8d, 0xbd, 0x62],
+                asm.RTL(),
+            ], "enemy script mirror cast: the party is drawn")
+            space = Reserve(DRAW_CHARACTERS_START, DRAW_CHARACTERS_END, "animation: draw characters", asm.NOP())
+            space.write(
+                asm.JSL(drawn.start_address_snes),
             )
 
             # "abort on characters": the characters are taken out of the targets
