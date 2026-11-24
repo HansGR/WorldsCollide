@@ -25,10 +25,13 @@ class CzarDragon(FinalBoss):
 
     # the highest attack of each element that an enemy can use on the party
     FIRE, ICE, BOLT, POISON = "Fire 3", "Ice 3", "Bolt 3", "Bio"
-    WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Quake", "El Nino"
-    EARTH_ELEMENT = 0x40                    # quake hits both sides: he takes no damage from earth
-    WIND_ELEMENT = 0x10                     # he absorbs wind (merton, fire and wind, hits both sides too)
-    POISON_ELEMENT = 0x08                   # and takes half the damage of poison, where final kefka takes none
+    WIND, PEARL, EARTH, WATER = "Aero", "Pearl", "Magnitude8", "El Nino"
+    # he takes half the damage of fire, ice and bolt (the magic a party has most of), absorbs wind
+    # (merton, fire and wind, hits both sides: it heals him) and takes the damage of the others:
+    # of poison too, where final kefka takes none. (so his earth is magnitude8, which hits the
+    # party only: quake hits both sides)
+    HALF_ELEMENTS = 0x01 | 0x02 | 0x04
+    WIND_ELEMENT, POISON_ELEMENT = 0x10, 0x08
     MERTON, N_CROSS, GIGA_VOLT = "Merton", "N. Cross", "Giga Volt"      # at 53% hp and below
 
     # megiddo: one of these for each one it hits (status byte 0 to 2, status), unless protected
@@ -51,7 +54,6 @@ class CzarDragon(FinalBoss):
         czar.speed = min(round(czar.speed * self.SPEED), 2 ** 8 - 1)
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
-        czar.immune_elements |= self.EARTH_ELEMENT
         czar.immune_elements &= ~self.POISON_ELEMENT
         czar.absorb_elements |= self.WIND_ELEMENT
 
@@ -115,7 +117,7 @@ class CzarDragon(FinalBoss):
         data.rom.set_bytes(revenger, terror.ability_data())
 
     def battle_mod(self):
-        self.half_damage_mod(self.POISON_ELEMENT)
+        self.half_damage_mod(self.HALF_ELEMENTS)
         self.giant_sprite_mod(self.CZAR_DRAGON, pixels = czar_dragon_sprite.pixels(),
                               palette = czar_dragon_sprite.palette(), scale = self.SCALE, lower = self.LOWER)
 
