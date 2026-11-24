@@ -259,7 +259,7 @@ CzarDragon, a boss the game has an enemy for and never uses. His sprite is the o
 - **At 53% HP and below** three of them are stronger: Merton (fire and wind, everyone on both sides, not dodged: he absorbs it), N. Cross (ice: it freezes whom it hits, at random among the party, with no damage) and Giga Volt (bolt).
 - **Havoc Wing** is final Kefka's (his special: a blow at 4x damage), in 3 turns of the lists above where Kefka has it in 9.
 - **Megiddo** is Goner, renamed, and it sets one status on each one it hits, chosen for each: Dark, Poison, Imp, Mute, Muddle, Sleep, Slow or Stop, 1/8 each (`random_status_mod`). One who is protected from the status chosen gets none. He charges up before it without Kefka's laughing head.
-- **Terror** is Revenger remade: the Drain spell on the whole party with a power of 80 (the spell's is 38), with Revenger's looks, which Reflect and Runic do not stop and which is not dodged. He gets the HP each one loses.
+- **Terror** is Revenger remade: the Drain spell on the whole party with a power of 100 (the spell's is 38), with Revenger's looks, which Reflect and Runic do not stop and which is not dodged. He gets the HP each one loses.
 
 ## How a final boss is made
 

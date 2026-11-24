@@ -43,7 +43,7 @@ class CzarDragon(FinalBoss):
         (2, 0x10),      # stop
     ]
 
-    TERROR_SOURCE, TERROR_POWER = "Drain", 80
+    TERROR_SOURCE, TERROR_POWER = "Drain", 100
 
     def enemies_mod(self, enemies):
         czar = self.enemy(enemies)
