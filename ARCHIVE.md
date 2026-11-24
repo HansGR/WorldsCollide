@@ -3815,3 +3815,52 @@ A script section is **blocks**, each ended by `FE` (EndIf) or the section's `FF`
 - Testing a script in the emulator with an idle party is slow (a turn is 600-900 frames). A scratch driver that imports `wc`, wraps the boss's `scripts_mod` and replaces his main block with the attacks to see, one a turn, shows each in a minute.
 - When logging enemy state, enemies are entities 8, 10, 12 (`$3EF8 + 8 + 2 * n`), not 16 on.
 - Testing seeds for a playtester: the debug driver (not in the repository) plus `-stl 45`, starting items by `-si id.min.max...`, and `equipable_characters |= 0x3fff` for the gear to compare.
+
+## King Pug: Script Counters, Custom Conditions, Hand-Sized Sprites (2026-11)
+
+The fourth custom final boss on branch `final-boss` (`-fb kingpug`, `final_boss/king_pug.py`): Pug at 3x with a crown, final Kefka's script with WallChange as an answer to elemental damage, Grudge Ray (Goner), Lullaby, Life Mine. His battle program is in `final_boss/README.md`. What follows adds to the two final boss sections above.
+
+### What a monster does when it is hit (the script after `EndMainLoop`)
+
+- The counter part of a script is read like the main part: blocks, top to bottom, the first whose conditions pass runs. A block that fails falls through to the next.
+- **Final Kefka does nothing when hit above 49% HP.** His only answers are `If HP < 17%` (nothing / Battle / Ultima) and `If HP < 49%` (nothing / Battle / HyperDrive), each also needing `If(0x15, 0, 0)` (bit 0 of variable 0 clear: he sets it while charging Goner) and `If(0x05, 0, 0)`. A boss made from him that "does not counter" is most likely just above 49%. King Pug has a third block after those for any other HP; a block added after the last one needs the `EndIf` the vanilla script leaves out before `EndScript`.
+- **FC 05 ("if damaged") is not "this hit damaged me".** It is true for every hit once anyone has ever damaged the monster (`$327C` is never reset). For "this hit did damage" use the custom condition below.
+- FC 04 (hit by an element) with 0xFF is "the hit had any element": a weapon with an element counts.
+- A block placed before Kefka's own answers that ends in `EndIf` swallows the hit when it passes: nothing below runs for that hit. That is why an elemental hit gives WallChange and no physical answer.
+
+### A custom condition: DAMAGED (`damaged_condition_mod`)
+
+- FC conditions are a pointer table at C2/1D55; 0x0A points at an `rts` and is free. One boss can have one use of it: `CHANCE` (Grampaluma) or `DAMAGED` (King Pug).
+- DAMAGED is true when the monster has lost more HP (`$3C1C,Y - $3BF4,Y`, max minus current) than at the last test, and stores the new value. The first version stored current HP and compared with a variable that starts at 0, so it missed the first hit: comparing HP *lost* starts right.
+- It keeps its value in `$3EB2` (script variables 2 and 3 of the battle), which final Kefka's script does not use. Because testing it stores the value, it can be true once per hit: a second block cannot test it again for the same hit.
+- Absorbed or nullified hits lose no HP, so they do not pass. That is what makes "WallChange only when elemental damage > 0" work.
+
+### Attacks
+
+- `experience_damage_mod`: damage = the target's experience / the attack's power byte, ignoring defenses (per-target special effect; Step Mine's own effect 0x1E is replaced). Experience by level: L30 68,304; L45 234,808; L60 561,528; a character who joins at a level has that level's experience (C0/A235). With a divisor of 64 that is 1067 / 3668 / 8773 and 9999 from level 63.
+- The free special effects (0x45, 0x46, 0x47) are one per use: Grudge Ray's stop chance (`status_chance_mod`) has 0x45, so Life Mine has 0x46.
+- The unused attack slot (Confusion, 170) can be reused by every boss, since a seed has one final boss.
+- WallChange (effect 0x26) on himself: weak to one random element, no damage from the other seven, absorbs one of them. A "weakness spell" command (`WEAKNESS = 0x65` in `data/enemy_script_custom_commands.py`) casts by his current weak element, with a fallback before the first WallChange.
+- Slow 2 from a script hits the whole party; Stop one character.
+- A boss at 0.8x final Kefka's speed was outrun by a level 45 party for the whole battle. Speed went back to 1.0x; slowness is better expressed by what he does than by the stat.
+
+### The Goner picture and colours
+
+- `goner_sprite_mod(pixels, palette, move)` replaces Kefka's laughing head (attack animation 399, on screen at about x 129..161, y 86..118) with any 32x32 picture, 7 colours. `move` shifts it only in **16-pixel steps** (frame tile positions). To put it exactly over something on the boss, move the boss instead (`giant_sprite_mod(..., lower, right)`) and, for the last few pixels, draw the picture off-centre inside its 32x32.
+- A sprite cannot be lowered past the mold: height + `lower` must be at most 128. With the bottom pinned, a feature's screen height depends only on its distance from the sprite's bottom.
+- `monster_sprite.bounds()` trims empty rows and columns after the last pixels only (right and bottom). Empty rows at the top of hand-made pixels stay and push the sprite down.
+- `goner_colors_mod(goner, streak_color, script_changes)` recolours Goner: animation script commands b6 (background), b9/bc (monster); the byte is R 0x80 | G 0x40 | B 0x20, 0x10 = add more, low nibble the amount.
+
+### Sprites drawn at an in-between size
+
+- `giant_sprite_mod(enemy, pixels = rows, palette = colors, scale = (2, 1))` shows given pixels in the place of the enemy's sprite. King Pug's are Pug's at 1.5x (scale3x, then every 2x2 as one pixel, ties keeping the outline) in `graphics/king_pug.py`, shown at 2x: 3x in all, with the chunkiness of a 2x boss. Plain 3x nearest-neighbour looked too blocky and scale3x at full 3x too smooth; both were rejected.
+- Anything added by hand (the crown) is drawn at the in-between size so its pixels match.
+- A 4bpp monster sprite has 15 colours and Pug uses all of them. Two new colours cost two old ones (their pixels take the nearest remaining colour); reusing existing colours costs none. Show the cost when proposing new colours.
+- The generator scripts for the art and the glow are scratch files, not in the repository: the `graphics/*.py` files are the source. Edit them by hand or rewrite a generator.
+
+### Process
+
+- **Previews before builds for art.** Colour and shape questions were settled fastest with a sheet of labelled options rendered from the pixel data (no ROM build), then one build of the choice. Several of my hand-drawn "improvements" (knife, lantern, thinner outline) were reverted in favour of the automatic upscale: offer them as previews, do not build them in unasked.
+- A reverted look is kept by `git revert` (the original commit stays in history to revert back to), not by deleting history.
+- To check a counter in the emulator: hold the boss at full HP and the party at full HP every step, mash Fight, and count how often a character's HP drops; compare with the build before the change (`uc_counter.py` in the scratch battletest directory).
+- When a user reports "X never happens", read the built script first (`script.py` dump): the cause here was vanilla behaviour, not a bug in the new block.
