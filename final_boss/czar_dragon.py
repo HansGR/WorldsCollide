@@ -5,13 +5,13 @@ from final_boss.final_boss import FinalBoss, ABILITY_DATA_START
 class CzarDragon(FinalBoss):
     # czardragon, a boss the game has an enemy for and never uses: here with the looks a later
     # release gave him (graphics/czar_dragon.py). his magic is the highest of each of the eight
-    # elements, and his blows are fewer than final kefka's. final kefka's stats, with more magic
-    # defense and less defense
+    # elements, and his blows are fewer than final kefka's. final kefka's stats, with more speed
+    # and magic defense and less defense
     #
     #   Goner       Megiddo: it also sets one status, chosen for each one it hits
     #   Revenger    Terror: drains the whole party, and he gets what they lose
     NAME = "CzarDragon"
-    DEFENSE, MAGIC_DEFENSE = 0.9, 1.2       # of final kefka's
+    SPEED, DEFENSE, MAGIC_DEFENSE = 1.2, 0.9, 1.2   # of final kefka's
 
     CZAR_DRAGON = 311                       # the unused enemy (a dragon, with graphics as his are)
     SCALE = (1, 1)                          # his sprite is 118x111 pixels: as it is
@@ -45,6 +45,7 @@ class CzarDragon(FinalBoss):
     def enemies_mod(self, enemies):
         czar = self.enemy(enemies)
         czar.name = self.NAME
+        czar.speed = min(round(czar.speed * self.SPEED), 2 ** 8 - 1)
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         czar.immune_elements |= self.EARTH_ELEMENT

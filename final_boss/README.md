@@ -223,7 +223,7 @@ Pug (the green one) at 3x the size of his sprite, crowned (96x96 pixels). His sp
 
 CzarDragon, a boss the game has an enemy for and never uses. His sprite is the one a later release of the game gave him, with wings and a tail (`graphics/czar_dragon.py`: from a picture of it, 118x111 pixels in 15 colors), shown at its own size, which nearly fills a formation's 128 pixels, and low enough to be clear of the boxes at the top. The enemy's own looks in this game are the Blue Dragon's sprite in a black, red and gold palette (64x96 pixels).
 
-**Stats:** final Kefka's, with +0 levels, 0.9x defense (105) and 1.2x magic defense (162). He takes no damage from earth (his own Quake hits both sides), nor from poison, as final Kefka does not.
+**Stats:** final Kefka's, with +0 levels, 1.2x speed, 0.9x defense (105) and 1.2x magic defense (162). He takes no damage from earth (his own Quake hits both sides), nor from poison, as final Kefka does not.
 
 ### Battle program
 
