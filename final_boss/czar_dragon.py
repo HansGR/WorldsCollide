@@ -57,8 +57,11 @@ class CzarDragon(FinalBoss):
         czar.defense = min(round(czar.defense * self.DEFENSE), 2 ** 8 - 1)
         czar.magic_defense = min(round(czar.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         czar.immune_elements &= ~self.POISON_ELEMENT
-        czar.float = 1
-        czar.status_effects.dance = 1                   # (on a monster: float that is not taken away)
+        # float that is not taken away: on a monster that is "dance" among its statuses. (not the
+        # float of its data's last status byte as well: that one is also kept in a byte of the
+        # battle's where it means something else, and with it he dies as any monster does, without
+        # the final death)
+        czar.status_effects.dance = 1
         czar.absorb_elements |= self.WIND_ELEMENT
 
     def scripts_mod(self, scripts):
