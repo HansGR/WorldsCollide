@@ -101,6 +101,43 @@ class FinalBoss:
             asm.JSR(jumper_relic_effects, asm.ABS),
         )
 
+    def carried_jump_mod(self, position = (16, 16)):
+        # for a final boss who is carried off by palidor (the esper has its caster's side jump: his,
+        # with mirrorcast). palidor's animation leaves a monster where it carried it, off the
+        # screen, and the landing brings a jumper back to where it started from: so when he lands
+        # (where the jump command looks for the jumper's dragon horn, as jump_mod: one or the
+        # other) he is first put back in his place, where the final formation has him
+        # x = the jumper (8 and up are the enemies). 8 bit a, x and y
+        JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END = 0x21820, 0x21822
+
+        enemy_ids = 0x33a8
+        first_enemy = 8
+        monster_x, monster_y = 0x80c3, 0x80cf       # a word for each monster
+
+        src = [
+            asm.CPX(first_enemy, asm.IMM8),
+            asm.BLT("JUMPER"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_X),
+            asm.CMP(self.enemy_id, asm.IMM16),
+            asm.BNE("NOT_HIM"),
+            asm.LDA(position[0], asm.IMM16),
+            asm.STA(monster_x - first_enemy, asm.ABS_X),
+            asm.LDA(position[1], asm.IMM16),
+            asm.STA(monster_y - first_enemy, asm.ABS_X),
+            "NOT_HIM",
+            asm.A8(),
+            "JUMPER",
+            Read(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "final boss: back in his place to land")
+
+        hook = Reserve(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END, "jump: load jumper's relic effects", asm.NOP())
+        hook.write(
+            asm.JSR(space.start_address, asm.ABS),
+        )
+
     def jump_animation_mod(self):
         # a jumper with more landings to come (only the dragon horn does that) bounces: down onto
         # the target and straight back up, and it returns to its place only after the last landing.

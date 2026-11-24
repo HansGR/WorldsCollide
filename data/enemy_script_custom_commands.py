@@ -1,4 +1,4 @@
-from memory.space import Bank, START_ADDRESS_SNES, Reserve, Allocate, Write
+from memory.space import Bank, START_ADDRESS_SNES, Reserve, Allocate, Write, Read
 import instruction.asm as asm
 from constants.battle_addresses import ENEMY_LEVEL
 
@@ -101,10 +101,15 @@ class EnemyScriptCommands:
         # water), the attack value WEAKNESS is the one for the element the monster is weak to (the
         # first of them), or no_weakness_attack: what master pug does after wallchange
         #
-        # with mirror_cast (espers not to cast, the attack if there is none to cast, the enemy who casts), the attack value
+        # with mirror_cast (espers not to cast, the attack if there is none to cast, the enemy who casts,
+        # the attack it is named by), the attack value
         # MIRROR_CAST is the esper that one of the party has equipped: a character of the party is
         # chosen, and the next ones are tried if that one is not there, has no esper or has one
         # of those not to cast. (an esper's attack in a script is summoned as it is: 0x36 and up)
+        # it is named at the top of the screen by an attack's name, not the esper's (as the magicite
+        # item is by the item's), and shown as it is to a party attacked from behind: from the other
+        # side (the espers' animations choose what they do by the side the party is on). a bit of
+        # the battle's memory says that the enemy's last attack was this
         # the espers that attack are not to hit characters (a flag of their data: "abort on
         # characters", which takes the characters out of an attack's targets), so that does not hold
         # for this enemy
@@ -144,7 +149,50 @@ class EnemyScriptCommands:
             FIRST_ESPER_ATTACK = 0x36
             CHARACTERS = 4
             character_bit, present, esper = 0x3018, 0x3a74, 0x3344
-            no_espers, no_esper_attack, caster = mirror_cast
+            no_espers, no_esper_attack, caster, name_attack = mirror_cast
+            mirror_casting, MIRROR_CASTING = 0x3f2e, 0x80   # (its low bits: the characters who have used their espers)
+
+            # the name at the top of the screen: for a summon it is the esper's attack, by its number
+            # y = the attacker. 8 bit a, x and y
+            SUMMON_NAME_START, SUMMON_NAME_END = 0x2368e, 0x23693
+            FIRST_ENEMY, ATTACK_NAME = 8, 0x00
+            name_type, attack = 0x3a29, 0xb6
+            summon_name = Write(Bank.C2, [
+                asm.CPY(FIRST_ENEMY, asm.IMM8),
+                asm.BLT("ESPER"),
+                asm.LDA(ATTACK_NAME, asm.IMM8),
+                asm.STA(name_type, asm.ABS),
+                asm.LDA(name_attack, asm.IMM8),
+                asm.RTS(),
+                "ESPER",
+                Read(SUMMON_NAME_START, SUMMON_NAME_END),
+            ], "enemy script mirror cast: name")
+            space = Reserve(SUMMON_NAME_START, SUMMON_NAME_END, "summon name", asm.NOP())
+            space.write(
+                asm.JMP(summon_name.start_address, asm.ABS),
+            )
+
+            # an animation's script asks how the battle began (0: as usual, 1: the party attacked from
+            # behind, 2: from both sides, 3: with the enemies between the party) to choose what it does
+            # x = the animation. 8 bit a
+            BATTLE_TYPE_START, BATTLE_TYPE_END = 0x1d408, 0x1d40c
+            FROM_BEHIND = 0x01
+            caster_position = 0x6a38                # bit 7: an enemy
+            battle_type = Write(Bank.F0, [
+                asm.LDA(caster_position, asm.ABS_X),
+                asm.BPL("AS_IT_IS"),
+                asm.LDA(mirror_casting, asm.ABS),
+                asm.BPL("AS_IT_IS"),
+                asm.LDA(FROM_BEHIND, asm.IMM8),
+                asm.RTL(),
+                "AS_IT_IS",
+                Read(BATTLE_TYPE_START, BATTLE_TYPE_END),
+                asm.RTL(),
+            ], "enemy script mirror cast: battle type for animations")
+            space = Reserve(BATTLE_TYPE_START, BATTLE_TYPE_END, "animation battle type", asm.NOP())
+            space.write(
+                asm.JSL(battle_type.start_address_snes),
+            )
 
             # x = the attacker (8 and up are the enemies). 8 bit a, x and y
             ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END = 0x25905, 0x2590a
@@ -174,7 +222,7 @@ class EnemyScriptCommands:
 
             src += [
                 asm.CMP(MIRROR_CAST, asm.IMM8),
-                asm.BNE("NOT_MIRROR_CAST"),
+                asm.BNE("NO_MIRROR_CAST"),
                 asm.PHY(),
                 asm.LDA(CHARACTERS, asm.IMM8),
                 asm.JSR(RANDOM, asm.ABS),
@@ -206,9 +254,20 @@ class EnemyScriptCommands:
                 asm.DEX(),
                 asm.BNE("CHARACTER"),
                 asm.LDA(no_esper_attack, asm.IMM8),
+                asm.PLY(),
+                "NO_MIRROR_CAST",
+                asm.PHA(),
+                asm.LDA(MIRROR_CASTING, asm.IMM8),
+                asm.TRB(mirror_casting, asm.ABS),
+                asm.PLA(),
+                asm.BRA("CHOSEN"),
                 "MIRROR_CAST",
                 asm.PLY(),
-                "NOT_MIRROR_CAST",
+                asm.PHA(),
+                asm.LDA(MIRROR_CASTING, asm.IMM8),
+                asm.TSB(mirror_casting, asm.ABS),
+                asm.PLA(),
+                "CHOSEN",
             ]
         src += [
             asm.JMP(CHOOSE_ATTACK_COMMAND, asm.ABS),

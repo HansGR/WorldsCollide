@@ -33,6 +33,7 @@ class Juggernaut(FinalBoss):
     ABILITY_NAMES = {
         "Goner"         : "Soul Burn",
         "HyperDrive"    : "Crush",
+        "Revenger"      : "MirrorCast",     # (what his mirrorcast is named by: he does not use the attack)
     }
     GONER_TEXT = "MagiTek engine going critical!<wait 60 frames><end>"
     SOUL_BURN_POWER = 30                    # 3x rasp's
@@ -42,11 +43,10 @@ class Juggernaut(FinalBoss):
     LAUNCHER = "Launcher"
     IO = "Io"                               # crush is his special attack
 
-    # mirrorcast: the espers he does not cast (odin and raiden kill, as the game leaves them out of
-    # its own random esper, and shoat turns to stone; palidor has the caster's side jump; ragnarok
-    # changes its target into an item; golem's wall is the party's whoever calls it), and what he
-    # does if there is none to cast
-    NO_MIRROR_CASTS = {"Odin" : 11, "Raiden" : 12, "Shoat" : 5, "Palidor" : 9, "Ragnarok" : 16, "Golem" : 22}
+    # mirrorcast: the espers he does not cast (ragnarok changes its target into an item; golem's
+    # wall is the party's whoever calls it), and what he does if there is none to cast. with
+    # palidor he jumps, and lands on one of the party
+    NO_MIRROR_CASTS = {"Ragnarok" : 16, "Golem" : 22}
     NO_MIRROR_CAST = "Diffuser"
 
     HIT_BY_COMMAND, NOT_CHARGING = 0x01, 0x15                   # script conditions
@@ -79,7 +79,7 @@ class Juggernaut(FinalBoss):
         # launcher in one roll of the last
         from data.enemy_script_custom_commands import MIRROR_CAST
         scripts.enemy_script_custom_commands.command_attacks_mod(
-            {}, mirror_cast = (list(self.NO_MIRROR_CASTS.values()), name_id[self.NO_MIRROR_CAST], self.enemy_id))
+            {}, mirror_cast = (list(self.NO_MIRROR_CASTS.values()), name_id[self.NO_MIRROR_CAST], self.enemy_id, name_id["Revenger"]))
         revenger, launcher = name_id["Revenger"], name_id[self.LAUNCHER]
         script.replace(ai_instr.RandomAttack(special, train, revenger), ai_instr.RandomAttack(special, train, MIRROR_CAST))
         script.replace(ai_instr.RandomAttack(train, special, revenger), ai_instr.RandomAttack(train, special, MIRROR_CAST))
@@ -119,6 +119,9 @@ class Juggernaut(FinalBoss):
         graphic = Read(SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor, SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor)
         space = Reserve(SPECIAL_ATTACK_GRAPHICS + self.enemy_id, SPECIAL_ATTACK_GRAPHICS + self.enemy_id, "final kefka special attack graphic")
         space.write(graphic)
+
+        # with palidor's mirrorcast he is carried off, and lands on one of the party
+        self.carried_jump_mod()
 
         # crush (hyperdrive) is shown as io's special attack is
         from data.spell_names import name_id
