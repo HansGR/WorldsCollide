@@ -4,7 +4,8 @@ import args
 
 class VanishDoom:
     def __init__(self):
-        if args.fix_vanish_doom:
+        import final_boss
+        if args.fix_vanish_doom or final_boss.get().FIX_VANISH_DOOM:
             self.mod()
 
     def mod(self):

@@ -19,7 +19,7 @@ class Juggernaut(FinalBoss):
     SPECIAL_NAME = "Drill"
     SHADOW_COLOR, SHADOW_ROWS = 1, 12
     SCALE = (4, 3)                          # his sprite is 95x59 pixels without its shadow: 127 wide is the most that fits
-    LOWER = 24                              # pixels: clear of the boxes at the top
+    LOWER = 40                              # pixels: clear of the boxes at the top, and lower still
 
     BOLT, WATER = 0x04, 0x80                # elements
 
@@ -43,10 +43,15 @@ class Juggernaut(FinalBoss):
     LAUNCHER = "Launcher"
     IO = "Io"                               # crush is his special attack
 
-    # mirrorcast: the espers he does not cast (ragnarok changes its target into an item; golem's
-    # wall is the party's whoever calls it), and what he does if there is none to cast. with
-    # palidor he jumps, and lands on one of the party
-    NO_MIRROR_CASTS = {"Ragnarok" : 16, "Golem" : 22}
+    # mirrorcast: the esper he does not cast (ragnarok changes its target into an item), and what
+    # he does if there is none to cast. with palidor he jumps, and lands on one of the party
+    NO_MIRROR_CASTS = {"Ragnarok" : 16}
+    GOLEM_HP = 3000                         # the wall golem makes for him: the damage of physical attacks it takes
+
+    # statuses final kefka is protected from and he is not: the party's espers set them on him
+    # with mirrorcast (fenrir, phantom, carbunkl, zoneseek) and the party can
+    STATUSES = ["image", "clear", "reflect", "safe", "shell"]
+    FIX_VANISH_DOOM = True                  # (clear, without the fix: a spell that kills would not miss him)
     NO_MIRROR_CAST = "Diffuser"
 
     HIT_BY_COMMAND, NOT_CHARGING = 0x01, 0x15                   # script conditions
@@ -60,6 +65,8 @@ class Juggernaut(FinalBoss):
         juggernaut.defense = min(round(juggernaut.defense * self.DEFENSE), 2 ** 8 - 1)
         juggernaut.magic_defense = min(round(juggernaut.magic_defense * self.MAGIC_DEFENSE), 2 ** 8 - 1)
         juggernaut.weak_elements |= self.BOLT | self.WATER
+        for status in self.STATUSES:
+            setattr(juggernaut.status_immunities, status, 0)
 
     def scripts_mod(self, scripts):
         # (his battle program is written out in final_boss/README.md: keep it up to date with this)
@@ -113,7 +120,9 @@ class Juggernaut(FinalBoss):
 
     def battle_mod(self):
         self.giant_sprite_mod(self.tunnel_armor, self.SHADOW_COLOR, self.SHADOW_ROWS,
-                              scale = self.SCALE, lower = self.LOWER)
+                              scale = self.SCALE, lower = self.LOWER,
+                              palette = self.chrome(self.monster_palette(self.tunnel_armor)))
+        self.golem_mod(self.GOLEM_HP)
 
         # his special attack is shown as tunnelarmr's is
         graphic = Read(SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor, SPECIAL_ATTACK_GRAPHICS + self.tunnel_armor)
@@ -131,3 +140,18 @@ class Juggernaut(FinalBoss):
         # it is a picture of nothing
         HEAD_PIXELS, PALETTE_COLORS = 32, 8
         self.goner_sprite_mod([[0] * HEAD_PIXELS for _ in range(HEAD_PIXELS)], [0] * PALETTE_COLORS)
+
+    @staticmethod
+    def chrome(palette):
+        # tunnelarmr's palette in chrome: his purple body (colors 3 to 7) in dark chrome, his wheels
+        # and claws (8 to 11, and 14: olive) in bright chrome, a little blue. the red of the mark on
+        # his nose (12 and 15), the white and the dark outline stay
+        BODY, WHEELS = range(3, 8), [8, 9, 10, 11, 14]
+        DARK, BRIGHT = 0.85, 1.25
+        TINT = (0.94, 0.98, 1.10)
+        colors = list(palette)
+        for index, (red, green, blue) in enumerate(palette):
+            if index in BODY or index in WHEELS:
+                brightness = (0.30 * red + 0.59 * green + 0.11 * blue) * (DARK if index in BODY else BRIGHT)
+                colors[index] = tuple(min(max(round(brightness * tint), 0), 31) for tint in TINT)
+        return colors

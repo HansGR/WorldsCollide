@@ -33,6 +33,7 @@ class FinalBoss:
     NAME = "Kefka"
     ENEMY = "Kefka (Final)"
 
+    FIX_VANISH_DOOM = False # a final boss who can be made clear needs the fix whether the seed has it or not (bug_fixes/vanish_doom.py)
     LEVELS = 0              # levels above what final kefka's would be in the battle (battle/load_enemy_level.py)
 
     def __init__(self):
@@ -771,6 +772,73 @@ class FinalBoss:
         attack.flags2 = (attack.flags2 | NOT_REFLECTABLE) & ~RUNIC
         attack.accuracy = hit_rate
         data.rom.set_bytes(revenger, attack.ability_data())
+
+    def golem_mod(self, golem_hp):
+        # golem's wall for a final boss who calls it (with mirrorcast). the game's wall is the
+        # party's whoever calls it: it has the hp of its caster, and it takes the blows of fight
+        # on a character. called by a monster it is his: it has this many hp, and while it has
+        # any a physical attack does him no damage and takes its damage from the wall
+        #
+        # the wall's hp are kept in the battle's script variables 2 and 3, which the scripts of the
+        # final battle do not use
+        GOLEM_START, GOLEM_END = 0x23f65, 0x23f6d       # y = the target. 8 bit a, x and y; returns with 16 bit a
+        PHYSICAL_START, PHYSICAL_END = 0x20c2d, 0x20c30  # y = the target. 8 bit a, x and y
+        FIRST_ENEMY = 8
+        hp, party_golem_hp, his_golem_hp = 0x3bf4, 0x3a36, 0x3eb2
+        attack_flags, damage, enemy_ids = 0x11a2, 0xf0, 0x33a8
+
+        assert Read(GOLEM_START, GOLEM_END) == [0xc2, 0x20, 0xb9, 0xf4, 0x3b, 0x8d, 0x36, 0x3a, 0x60]
+        golem = Write(Bank.F0, [
+            asm.CPY(FIRST_ENEMY, asm.IMM8),
+            asm.A16(),                              # (does not change the carry)
+            asm.BGE("HIS"),
+            asm.LDA(hp, asm.ABS_Y),
+            asm.STA(party_golem_hp, asm.ABS),
+            asm.RTL(),
+            "HIS",
+            asm.LDA(golem_hp, asm.IMM16),
+            asm.STA(his_golem_hp, asm.ABS),
+            asm.RTL(),
+        ], "final boss: golem")
+        space = Reserve(GOLEM_START, GOLEM_END, "golem", asm.NOP())
+        space.write(
+            asm.JSL(golem.start_address_snes),
+            asm.RTS(),
+        )
+
+        # where the damage of an attack to a target is known, and a physical attack is told apart
+        # (the carry on return)
+        assert Read(PHYSICAL_START, PHYSICAL_END) == [0xad, 0xa2, 0x11, 0x4a]
+        physical = Write(Bank.F0, [
+            asm.LDA(attack_flags, asm.ABS),
+            asm.LSR(),
+            asm.BCC("RETURN"),                      # not physical
+            asm.CPY(FIRST_ENEMY, asm.IMM8),
+            asm.BLT("PHYSICAL"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_Y),
+            asm.CMP(self.enemy_id, asm.IMM16),
+            asm.BNE("NO_WALL"),
+            asm.LDA(his_golem_hp, asm.ABS),
+            asm.BEQ("NO_WALL"),
+            asm.SEC(),
+            asm.SBC(damage, asm.DIR),
+            asm.BGE("WALL"),
+            asm.LDA(0x0000, asm.IMM16),
+            "WALL",
+            asm.STA(his_golem_hp, asm.ABS),
+            asm.STZ(damage, asm.DIR),
+            "NO_WALL",
+            asm.A8(),
+            "PHYSICAL",
+            asm.SEC(),
+            "RETURN",
+            asm.RTL(),
+        ], "final boss: golem takes the damage of physical attacks")
+        space = Reserve(PHYSICAL_START, PHYSICAL_END, "physical attack damage")
+        space.write(
+            asm.JSL(physical.start_address_snes),
+        )
 
     def mp_damage_mod(self, data, attack, free_effect = 0x47):
         # an attack (which has no special effect) also takes from its targets' mp what it takes from
