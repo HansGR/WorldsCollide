@@ -128,10 +128,14 @@ class FinalBoss:
             "NOT_HIM",
             asm.A8(),
             "JUMPER",
+            asm.RTL(),
+        ]
+        in_place = Write(Bank.F0, src, "final boss: back in his place to land")
+        space = Write(Bank.C2, [
+            asm.JSL(in_place.start_address_snes),
             Read(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END),
             asm.RTS(),
-        ]
-        space = Write(Bank.C2, src, "final boss: back in his place to land")
+        ], "final boss: back in his place to land call")
 
         hook = Reserve(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END, "jump: load jumper's relic effects", asm.NOP())
         hook.write(
@@ -784,8 +788,8 @@ class FinalBoss:
         assert data.rom.get_bytes(effect, 1)[0] == NO_EFFECT, "the attack has a special effect"
         data.rom.set_bytes(effect, [free_effect])
 
+        # (bank c2 has little room: all but the call of the game's own function is in bank f0)
         src = [
-            asm.JSR(HEALED_MINUS_DAMAGE, asm.ABS),
             asm.PHP(),
             asm.BEQ("RETURN"),
             asm.BGE("RETURN"),
@@ -808,9 +812,14 @@ class FinalBoss:
             asm.PLA(),
             "RETURN",
             asm.PLP(),
-            asm.RTS(),
+            asm.RTL(),
         ]
-        space = Write(Bank.C2, src, "final boss: mp damage with hp damage")
+        mp_damage = Write(Bank.F0, src, "final boss: mp damage with hp damage")
+        space = Write(Bank.C2, [
+            asm.JSR(HEALED_MINUS_DAMAGE, asm.ABS),
+            asm.JSL(mp_damage.start_address_snes),
+            asm.RTS(),
+        ], "final boss: mp damage with hp damage call")
 
         hook = Reserve(DEAL_HP_DAMAGE_START, DEAL_HP_DAMAGE_END, "final boss: deal hp damage")
         hook.write(

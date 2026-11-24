@@ -145,9 +145,11 @@ class EnemyScriptCommands:
                 "CHOOSE",
             ]
         if mirror_cast is not None:
+            # (bank c2 has little room: what can be is in bank f0)
             RANDOM = 0x4b65                 # 0 to a - 1
             FIRST_ESPER_ATTACK = 0x36
             CHARACTERS = 4
+            FIRST_ENEMY = 8
             character_bit, present, esper = 0x3018, 0x3a74, 0x3344
             no_espers, no_esper_attack, caster, name_attack = mirror_cast
             mirror_casting, MIRROR_CASTING = 0x3f2e, 0x80   # (its low bits: the characters who have used their espers)
@@ -155,21 +157,26 @@ class EnemyScriptCommands:
             # the name at the top of the screen: for a summon it is the esper's attack, by its number
             # y = the attacker. 8 bit a, x and y
             SUMMON_NAME_START, SUMMON_NAME_END = 0x2368e, 0x23693
-            FIRST_ENEMY, ATTACK_NAME = 8, 0x00
+            ATTACK_NAME = 0x00
             name_type, attack = 0x3a29, 0xb6
-            summon_name = Write(Bank.C2, [
+            summon_name = Write(Bank.F0, [
                 asm.CPY(FIRST_ENEMY, asm.IMM8),
                 asm.BLT("ESPER"),
                 asm.LDA(ATTACK_NAME, asm.IMM8),
                 asm.STA(name_type, asm.ABS),
                 asm.LDA(name_attack, asm.IMM8),
-                asm.RTS(),
+                asm.RTL(),
                 "ESPER",
-                Read(SUMMON_NAME_START, SUMMON_NAME_END),
+                asm.SEC(),
+                asm.LDA(attack, asm.DIR),
+                asm.SBC(FIRST_ESPER_ATTACK, asm.IMM8),
+                asm.RTL(),
             ], "enemy script mirror cast: name")
+            assert Read(SUMMON_NAME_START, SUMMON_NAME_END) == [0x38, 0xa5, attack, 0xe9, FIRST_ESPER_ATTACK, 0x60]
             space = Reserve(SUMMON_NAME_START, SUMMON_NAME_END, "summon name", asm.NOP())
             space.write(
-                asm.JMP(summon_name.start_address, asm.ABS),
+                asm.JSL(summon_name.start_address_snes),
+                asm.RTS(),
             )
 
             # an animation's script asks how the battle began (0: as usual, 1: the party attacked from
@@ -194,11 +201,12 @@ class EnemyScriptCommands:
                 asm.JSL(battle_type.start_address_snes),
             )
 
+            # "abort on characters": the characters are taken out of the targets
             # x = the attacker (8 and up are the enemies). 8 bit a, x and y
             ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END = 0x25905, 0x2590a
-            FIRST_ENEMY = 8
             target_flags, character_targets, enemy_ids = 0xba, 0xb8, 0x33a8
-            abort = Write(Bank.C2, [
+            assert Read(ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END) == [0xa5, target_flags, 0x10, 0x02, 0x64, character_targets]
+            abort = Write(Bank.F0, [
                 asm.LDA(target_flags, asm.DIR),
                 asm.BPL("RETURN"),                  # not abort on characters
                 asm.CPX(FIRST_ENEMY, asm.IMM8),
@@ -213,19 +221,16 @@ class EnemyScriptCommands:
                 "NO_ABORT",
                 asm.LDA(target_flags, asm.DIR),
                 "RETURN",
-                asm.RTS(),
+                asm.RTL(),
             ], "enemy script mirror cast: abort on characters")
             space = Reserve(ABORT_ON_CHARACTERS_START, ABORT_ON_CHARACTERS_END, "abort on characters", asm.NOP())
             space.write(
-                asm.JSR(abort.start_address, asm.ABS),
+                asm.JSL(abort.start_address_snes),
             )
 
-            src += [
-                asm.CMP(MIRROR_CAST, asm.IMM8),
-                asm.BNE("NO_MIRROR_CAST"),
+            # the esper of a character: a = where to start (0 to 3). returns the attack in a
+            find = [
                 asm.PHY(),
-                asm.LDA(CHARACTERS, asm.IMM8),
-                asm.JSR(RANDOM, asm.ABS),
                 asm.ASL(),
                 asm.TAY(),
                 asm.LDX(CHARACTERS, asm.IMM8),
@@ -237,14 +242,19 @@ class EnemyScriptCommands:
                 asm.BMI("NEXT_CHARACTER"),          # none equipped
             ]
             for no_esper in no_espers:
-                src += [
+                find += [
                     asm.CMP(no_esper, asm.IMM8),
                     asm.BEQ("NEXT_CHARACTER"),
                 ]
-            src += [
+            find += [
                 asm.CLC(),
                 asm.ADC(FIRST_ESPER_ATTACK, asm.IMM8),
-                asm.BRA("MIRROR_CAST"),
+                asm.PHA(),
+                asm.LDA(MIRROR_CASTING, asm.IMM8),
+                asm.TSB(mirror_casting, asm.ABS),
+                asm.PLA(),
+                asm.PLY(),
+                asm.RTL(),
                 "NEXT_CHARACTER",
                 asm.INY(),
                 asm.INY(),
@@ -253,20 +263,27 @@ class EnemyScriptCommands:
                 asm.TAY(),
                 asm.DEX(),
                 asm.BNE("CHARACTER"),
-                asm.LDA(no_esper_attack, asm.IMM8),
                 asm.PLY(),
-                "NO_MIRROR_CAST",
+                asm.LDA(no_esper_attack, asm.IMM8),
+            ]
+            not_mirror_cast = [
                 asm.PHA(),
                 asm.LDA(MIRROR_CASTING, asm.IMM8),
                 asm.TRB(mirror_casting, asm.ABS),
                 asm.PLA(),
+                asm.RTL(),
+            ]
+            find_space = Write(Bank.F0, find + not_mirror_cast, "enemy script mirror cast: find an esper")
+            not_mirror_cast_space = Write(Bank.F0, not_mirror_cast, "enemy script mirror cast: not this")
+            src += [
+                asm.CMP(MIRROR_CAST, asm.IMM8),
+                asm.BNE("NO_MIRROR_CAST"),
+                asm.LDA(CHARACTERS, asm.IMM8),
+                asm.JSR(RANDOM, asm.ABS),
+                asm.JSL(find_space.start_address_snes),
                 asm.BRA("CHOSEN"),
-                "MIRROR_CAST",
-                asm.PLY(),
-                asm.PHA(),
-                asm.LDA(MIRROR_CASTING, asm.IMM8),
-                asm.TSB(mirror_casting, asm.ABS),
-                asm.PLA(),
+                "NO_MIRROR_CAST",
+                asm.JSL(not_mirror_cast_space.start_address_snes),
                 "CHOSEN",
             ]
         src += [
