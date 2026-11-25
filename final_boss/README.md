@@ -4,15 +4,15 @@
 
 | Value | Final boss |
 |-------|------------|
-| `kefka` | Kefka, as he is. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
-| `ultimaro` | Ultimaro: a giant Umaro |
-| `uncleulty` | Uncle Ulty: a giant Ultros |
-| `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
-| `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
-| `czardragon` | CzarDragon: the game's unused boss, with the highest magic of all eight elements |
-| `juggernaut` | Juggernaut: a giant TunnelArmr, armored against blows, who answers magic |
-| `negarapa` | Negarapa: a giant Nerapa, who condemns the party and kills outright or by parts of the HP there is |
-| `random` | One of the above, chosen by the seed. The spoiler log names it |
+| `kefka` | Kefka. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
+| `ultimaro` | Ultimaro: a giant Umaro, fast and aggressive |
+| `uncleulty` | Uncle Ulty: a giant Ultros, lots of status effects |
+| `grampaluma` | Grampaluma: a giant Dadaluma, fast and supported by ChromeFists |
+| `kingpug` | King Pug: a giant Pug with heavy stabs, WallChange, and slow/stop/sleep magic |
+| `czardragon` | CzarDragon: the game's unused boss, omnimage with all eight elements |
+| `juggernaut` | Juggernaut: a giant TunnelArmr, high defense, counters magic, and zaps your MP |
+| `negarapa` | Negarapa: a giant Nerapa, specializing in condemn, death, and fractional HP reduction |
+| `random` | One of the above, chosen randomly. Choice is named in the spoiler log |
 
 ## Battle programs
 
