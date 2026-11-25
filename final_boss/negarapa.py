@@ -1,3 +1,4 @@
+import graphics.negarapa as negarapa_sprite
 import graphics.skull as skull
 
 from memory.space import Reserve, Read
@@ -5,7 +6,11 @@ from memory.space import Reserve, Read
 from final_boss.final_boss import FinalBoss, ABILITY_DATA_START
 
 class Negarapa(FinalBoss):
-    # nerapa, giant: death on a clock. she starts as nerapa does, with condemned on each of the
+    # nerapa, giant: death on a clock. her looks are those a later release of the game gave nerapa,
+    # brought down to this game's pixels and nerapa's own colors (graphics/negarapa.py): her sprite
+    # in this game is hard to make out at this size.
+    #
+    # she starts as nerapa does, with condemned on each of the
     # party, and her attacks are those that kill outright or take a part of the hp there is, with
     # nerapa's fire. final kefka's stats; she absorbs fire as nerapa does, and is weak to ice and pearl
     #
@@ -14,7 +19,7 @@ class Negarapa(FinalBoss):
     NAME = "Negarapa"
     NERAPA = "Nerapa"
     SPECIAL_NAME = "Demon Whip"
-    SCALE = (7, 4)                          # her sprite is 64 pixels high: twice that fills the mold, and her head would be behind the boxes at the top
+    SCALE = (1, 1)                          # her sprite (graphics/negarapa.py) is 66x112 pixels: as it is. taller, her head would be behind the boxes at the top
     LOWER, RIGHT = 16, 20                   # pixels: clear of the boxes at the top, and not at the far left of the enemies' side
     SKULL_MOVE = (1, 0)                     # the skull: 16 pixels left of the laughing head's place, by her knee
 
@@ -137,7 +142,8 @@ class Negarapa(FinalBoss):
         data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.CONDEMNED_STATUS])
 
     def battle_mod(self):
-        self.giant_sprite_mod(self.nerapa, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
+        self.giant_sprite_mod(self.nerapa, pixels = negarapa_sprite.pixels(), palette = negarapa_sprite.palette(),
+                              scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
 
         # the party is condemned when she dies, more often than not
         self.no_counters_in_final_death_mod()
