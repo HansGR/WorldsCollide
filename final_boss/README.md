@@ -350,7 +350,7 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 - **Demon Whip** is final Kefka's Havoc Wing (her special: a blow at 4x damage), renamed, and shown as a red line across its target with the sound of a flail (a blow of its own in the table of the blows that specials are shown with, which no monster used).
 - **Demi** takes 1/2 of the HP its target has, **Quartr** 3/4 from the whole party, and **Shimsham** 1/2. **Doom** and **X-Zone** (the whole party) kill those who are not protected from death. **Roulette** kills the one its cursor stops on, of everyone in the battle: she is protected. Reflect sends Demi, Quartr, Doom and X-Zone back at her, and they do nothing to her.
 - **S. Cross** is fire on the whole party, and **Merton** is fire and wind on everyone on both sides, not dodged: she absorbs it.
-- Before Last Rites final Kefka's laughing head is shown as a skull with skin hanging off it: his head as it is in the game, in other colors (its four lighter colors are bone, its two darkest the skin, and what trails under the head is all skin), with an eye socket, a nose hole and teeth drawn into it (`graphics/skull.py`).
+- Before Last Rites final Kefka's laughing head is shown as a skull with skin hanging off it: his head as it is in the game, in other colors (its four lighter colors are bone, its two darkest the skin, and what trails under the head is all skin), and a few details changed. His head is in profile, looking up and to the right: the eye is an empty socket, the nose is hollow, the open mouth is empty behind the row of teeth he shows, and the lower jaw has a row of teeth too (`graphics/skull.py`).
 
 ## How a final boss is made
 
