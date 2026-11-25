@@ -4,7 +4,7 @@
 
 | Value | Final boss |
 |-------|------------|
-| `kefka` | Kefka. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
+| `kefka` | Final Kefka, the default choice. If `-fb kefka` is declared, it is dropped from the flag string |
 | `ultimaro` | Ultimaro: a giant Umaro, fast and aggressive |
 | `uncleulty` | Uncle Ulty: a giant Ultros, lots of status effects |
 | `grampaluma` | Grampaluma: a giant Dadaluma, fast and supported by ChromeFists |
@@ -62,16 +62,16 @@ Umaro at 2x the size of his sprite (with the shadow under his feet removed).
 
 ### Attacks
 
-- **Yeti Punch** is Havoc Wing (his special: a blow at 4x damage), with the looks of Umaro's Tackle.
-- **Yeti Blast** is HyperDrive and **U'ghaaaa** is Goner, renamed.
-- **Enrager** is Revenger remade: the Bserk spell on the whole party at 0.5x its hit rate (75), which Reflect and Runic do not stop.
-- **Jump**: as Umaro jumps. He lands 2 to 4 times, as with a Dragon Horn: down and straight back up for each landing, with the damage showing as he leaves.
-- The green cherry is in the place of Kefka's laughing head. Its art is `graphics/green_cherry.py`.
-- From final Kefka's script: Storm was Fire 3, Surge was Bolt 3, the Ice 3 at 53% and below was Train, and the two Jumps were a Revenger and a Havoc Wing.
+- **Yeti Punch** is Havoc Wing (his special: a blow at 4x damage), with the animation of Umaro's Tackle.
+- **Yeti Blast** is HyperDrive 
+- **U'ghaaaa** is Goner, renamed.
+- **Enrager** overwrites Revenger: casts the Bserk spell on the whole party at 0.5x its hit rate (75), not blocked by Reflect or Runic.
+- **Jump**: as Umaro jumps. Ultimaro lands 2 to 4 times (as with a Dragon Horn).
+- A green cherry replaces Kefka's laughing severed head. Its art is `graphics/green_cherry.py`.
 
 ## Uncle Ulty
 
-Ultros (the one with all his tentacles) at 2x the size of his sprite, without his shadow, and low enough on the screen to be clear of the boxes at the top.
+Ultros at 2x the size of his sprite, without his shadow, and low enough on the screen to be clear of the textboxes at the top.
 
 **Stats:** final Kefka's, with +5 levels (after scaling and objectives), 1.0x speed, and 65535 HP (1.1x Kefka's 62000 would be 68200: 65535 is the most an enemy can have, 1.057x). Absorbs water.
 
