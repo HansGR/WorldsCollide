@@ -38,6 +38,10 @@ def _juggernaut():
     from final_boss.juggernaut import Juggernaut
     return Juggernaut
 
+def _negarapa():
+    from final_boss.negarapa import Negarapa
+    return Negarapa
+
 # name (the -fb value) : its class, imported when it is chosen
 _FINAL_BOSSES = {
     KEFKA       : _kefka,
@@ -47,6 +51,7 @@ _FINAL_BOSSES = {
     "kingpug"   : _king_pug,
     "czardragon": _czar_dragon,
     "juggernaut": _juggernaut,
+    "negarapa"  : _negarapa,
 }
 NAMES = list(_FINAL_BOSSES)
 
