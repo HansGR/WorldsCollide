@@ -16,6 +16,7 @@ class Negarapa(FinalBoss):
     SPECIAL_NAME = "Demon Whip"
     SCALE = (7, 4)                          # her sprite is 64 pixels high: twice that fills the mold, and her head would be behind the boxes at the top
     LOWER, RIGHT = 16, 20                   # pixels: clear of the boxes at the top, and not at the far left of the enemies' side
+    SKULL_MOVE = (1, 0)                     # the skull: 16 pixels left of the laughing head's place, by her knee
 
     FIRE, ICE, PEARL = 0x01, 0x02, 0x20     # elements
 
@@ -134,4 +135,4 @@ class Negarapa(FinalBoss):
 
         # she charges up before last rites as final kefka does before goner, and his laughing head
         # is a skull with skin hanging off it: his head in other colors, with a few details
-        self.goner_sprite_mod(skull.pixels(), skull.palette())
+        self.goner_sprite_mod(skull.pixels(), skull.palette(), self.SKULL_MOVE)
