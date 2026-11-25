@@ -26,7 +26,7 @@ class Negarapa(FinalBoss):
     # nerapa's one line in the game, before last rites. the box holds 32 letters: it is said in two
     # texts, the second in the place of one of vargas's that the randomizer never shows
     GONER_TEXT = "Mwa-ha-ha... You think...<wait 30 frames><end>"
-    GONER_TEXT_2, GONER_TEXT_2_ID = "I'm going to let you escape?<wait 60 frames><end>", 0x12
+    GONER_TEXT_2, GONER_TEXT_2_ID = "...I'm going to let you escape?<wait 60 frames><end>", 0x12
     GONER_TEXT_ID = 140
     CONDEMNED = "Condemned"
     CHARACTERS = [0x48, 0x49, 0x4a, 0x4b]   # targets: each of the party (condemned is for one)

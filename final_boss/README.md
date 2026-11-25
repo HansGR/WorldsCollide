@@ -320,12 +320,12 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 **Her first turn:** Condemned on each of the party.
 
 **Below 13% HP** (if she is charging up from the list below when her HP gets here, she does that one first):
-1. "Mwa-ha-ha... You think...", then "I'm going to let you escape?", and she charges up
+1. "Mwa-ha-ha... You think...", then "...I'm going to let you escape?", and she charges up
 2. Last Rites
 3. Meteor
 
 **At 53% HP and below:**
-1. "Mwa-ha-ha... You think...", then "I'm going to let you escape?", and she charges up
+1. "Mwa-ha-ha... You think...", then "...I'm going to let you escape?", and she charges up
 2. Last Rites
 3. Quartr / Fire 3 / X-Zone, then Demon Whip / Doom / nothing
 4. Merton / Quartr / Battle, then Flare / nothing / nothing
