@@ -15,7 +15,7 @@ class Negarapa(FinalBoss):
     NERAPA = "Nerapa"
     SPECIAL_NAME = "Demon Whip"
     SCALE = (7, 4)                          # her sprite is 64 pixels high: twice that fills the mold, and her head would be behind the boxes at the top
-    LOWER = 16                              # pixels: clear of the boxes at the top
+    LOWER, RIGHT = 16, 20                   # pixels: clear of the boxes at the top, and not at the far left of the enemies' side
 
     FIRE, ICE, PEARL = 0x01, 0x02, 0x20     # elements
 
@@ -122,7 +122,7 @@ class Negarapa(FinalBoss):
         data.rom.set_bytes(status, [data.rom.get_bytes(status, 1)[0] | self.CONDEMNED_STATUS])
 
     def battle_mod(self):
-        self.giant_sprite_mod(self.nerapa, scale = self.SCALE, lower = self.LOWER)
+        self.giant_sprite_mod(self.nerapa, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
 
         # demon whip
         used = Read(self.SPECIAL_ATTACK_GRAPHICS, self.SPECIAL_ATTACK_GRAPHICS + self.ENEMIES - 1)

@@ -310,7 +310,7 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 
 ## Negarapa
 
-Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her head would be behind the boxes at the top of the screen), 16 pixels lower. Death on a clock: she starts as Nerapa does, with Condemned on each of the party, and her attacks kill outright or take a part of the HP there is, with Nerapa's fire.
+Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her head would be behind the boxes at the top of the screen), 16 pixels lower and 20 to the right. Death on a clock: she starts as Nerapa does, with Condemned on each of the party, and her attacks kill outright or take a part of the HP there is, with Nerapa's fire.
 
 **Stats:** final Kefka's, with +0 levels. She absorbs fire, as Nerapa does, and is weak to ice and pearl.
 
