@@ -68,7 +68,7 @@ class Negarapa(FinalBoss):
         first_turn = instructions.index(ai_instr.EndIf())
         script.insert(first_turn, condemn() + [ai_instr.EndTurn()])
 
-        # above 53% hp: four turns in the place of fallen one and final kefka's six
+        # above 53% hp: six turns, as final kefka has after fallen one (which she does not have)
         instructions = script.instructions
         fallen_one = instructions.index(ai_instr.Spell(name_id["Fallen One"]))
         end = instructions.index(ai_instr.EndMainLoop())
@@ -81,6 +81,10 @@ class Negarapa(FinalBoss):
             ai_instr.RandomAttack(fire, doom, special),
             ai_instr.EndTurn(),
             ai_instr.RandomAttack(battle, roulette, nothing),
+            ai_instr.EndTurn(),
+            ai_instr.RandomAttack(s_cross, demi, special),
+            ai_instr.EndTurn(),
+            ai_instr.RandomAttack(battle, doom, nothing),
         ]
 
         # at 53% hp and below, the turns after goner (last rites)
@@ -128,6 +132,6 @@ class Negarapa(FinalBoss):
         special = self.SPECIAL_ATTACK_GRAPHICS + self.enemy_id
         Reserve(special, special, "final kefka special attack graphic").write(self.WHIP_GRAPHIC)
 
-        # she charges up before last rites as final kefka does before goner, and a skull is shown
-        # where his laughing head was
+        # she charges up before last rites as final kefka does before goner, and his laughing head
+        # is a skull with skin hanging off it: his head in other colors, with a few details
         self.goner_sprite_mod(skull.pixels(), skull.palette())
