@@ -11,6 +11,7 @@
 | `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
 | `czardragon` | CzarDragon: the game's unused boss, with the highest magic of all eight elements |
 | `juggernaut` | Juggernaut: a giant TunnelArmr, armored against blows, who answers magic |
+| `negarapa` | Negarapa: a giant Nerapa, who condemns the party and kills outright or by parts of the HP there is |
 | `random` | One of the above, chosen by the seed. The spoiler log names it |
 
 ## Battle programs
@@ -339,7 +340,7 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 
 **When she is hit:**
 - Below 17% HP, when damaged (not while she charges up or in the turns after Last Rites): nothing / Battle / Ultima
-- At any other HP (not while she charges up): Demi / Shimsham / nothing, on who hit her
+- At any other HP (not while she charges up): Shimsham / Battle / nothing, on who hit her
 
 **When she dies:** the final death, and every enemy goes with her.
 
@@ -351,6 +352,7 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 - **Demon Whip** is final Kefka's Havoc Wing (her special: a blow at 4x damage), renamed, and shown as a red line across its target with the sound of a flail (a blow of its own in the table of the blows that specials are shown with, which no monster used).
 - **Demi** takes 1/2 of the HP its target has, **Quartr** 3/4 from the whole party, and **Shimsham** 1/2. **Doom** and **X-Zone** (the whole party) kill those who are not protected from death. **Roulette** kills the one its cursor stops on, of everyone in the battle: she is protected. Reflect sends Demi, Quartr, Doom and X-Zone back at her, and they do nothing to her.
 - **S. Cross** is fire on the whole party, and **Merton** is fire and wind on everyone on both sides, not dodged: she absorbs it.
+- **How she is fought:** what she does is survived by not dying to it more than by HP. Protection from death (a Safety Bit or a Memento Ring) stops Doom, X-Zone, Roulette and the Doom that Condemned ends in; Demi, Quartr and Shimsham never kill on their own, and leave the party low for her fire and her blows. A party can not all be protected and still have what else it needs, with two relics each: one who is (and has a Ribbon), with Life spells and healing, keeps raising the others, and one who is raised is no longer condemned until Last Rites.
 - **When she dies** the counters over the condemned are stopped and taken away (`no_counters_in_final_death_mod`). It is the game's own bug that with any of them shown, dark bars are over the whole background while the final boss crumbles.
 - Before Last Rites final Kefka's laughing head is shown as a skull with skin hanging off it: his head as it is in the game, in other colors (its four lighter colors are bone, its two darkest the skin, and what trails under the head is all skin), and a few details changed. His head is in profile, looking up and to the right: the eye is an empty socket, the nose is hollow and without its tip (the bone of a nose goes about halfway), the open mouth is empty behind the row of teeth he shows, and the lower jaw has a row of teeth too (`graphics/skull.py`).
 
@@ -375,6 +377,7 @@ Every final boss is final Kefka's enemy (298), in his formation and running his 
 - `giant_sprite_mod(..., pixels = rows, palette = colors)` shows a sprite drawn for him (rows of palette indices) in the place of the enemy's, and 16 colors in the place of the enemy's palette.
 - `giant_sprite_mod(..., lower = pixels)` puts a sprite less high than the mold lower in it, to be clear of the boxes at the top of the screen. His place in the formation is Kefka's, so the death animation is too.
 - `golem_mod(hp, hand = (130, 88))` gives him Golem's wall when he calls it: physical attacks do him no damage until they have done it this much (the damage is shown, and taken from the wall). Golem's hand is shown at `hand` on the screen when the wall takes a Fight (the game only shows it for a character: the Fight animation is given Golem's block for him too, and the hand's place, which the game reads from the character, is given).
+- `no_counters_in_final_death_mod()` stops the Condemned counters and takes them off the screen when the final death starts: with any of them shown, the game draws dark bars over the whole background while the final boss crumbles (its own bug).
 - `mp_damage_mod(data, attack)` has an attack take from its targets' MP what it takes from their HP.
 - `half_damage_mod(elements)` has him take half the damage of elements, which an enemy's data has no place for.
 - `random_status_mod(data, attack, statuses)` has an attack also set one of 8 statuses, chosen for each target it hits.

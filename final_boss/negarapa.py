@@ -32,7 +32,7 @@ class Negarapa(FinalBoss):
     CHARACTERS = [0x48, 0x49, 0x4a, 0x4b]   # targets: each of the party (condemned is for one)
     ATTACKER = 0x47                         # target: who hit her last
     NOT_CHARGING, HIT = 0x15, 0x05          # script conditions
-    COUNTERS = ["Demi", "Shimsham", "Nothing"]
+    COUNTERS = ["Shimsham", "Battle", "Nothing"]
 
     # demon whip: the blow a monster's special attack is shown with is one of a table (8 bytes
     # each: byte 3 the picture of the hit, byte 4 its palette, byte 6 its sound). one that no
