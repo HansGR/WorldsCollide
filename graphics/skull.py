@@ -2,7 +2,7 @@
 # kefka's laughing head was: it is shown and fades away). it is his head as it is in the rom, in
 # other colors: its four lighter colors are bone and its two darkest the skin that hangs off
 # it, as what trails under the head is. his head is in profile, looking up and to the right: the
-# eye is an empty socket, the nose is hollow, and the open mouth is empty behind its teeth
+# eye is an empty socket, the nose is hollow and has no tip (bone goes halfway), and the open mouth is empty behind its teeth
 #
 # as it is seen in battle: 32x32 pixels, "." is transparent and 1-7 are the colors of PALETTE
 
@@ -10,9 +10,9 @@ PIXELS = [
     ".....77.11.116677...............",
     "....7.11677765456777............",
     "..7711655165553333667...........",
-    ".7..161616655551114567766116....",
-    "6..7176557676311111376511251....",
-    "..6564557435731111136411111.....",
+    ".7..16161665555111456771........",
+    "6..7176557676311111376511..1....",
+    "..656455743573111113641111......",
     ".6553667755343111113131541......",
     ".65265677656544111455667751.....",
     "65345676755654333317714457......",
