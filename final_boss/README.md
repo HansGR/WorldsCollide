@@ -16,7 +16,7 @@
 
 ## Battle programs
 
-Each boss below has its **battle program** first (the turn order and the odds, by the names the attacks have in the battle), then what its attacks are. **Keep the programs up to date when a script changes**: they are what a playtester reads. Write amounts as decimals or fractions (1.2x speed, 1/3), and every turn as its three choices (A / B / C), not as odds in words.
+Each bosses **battle program** is listed first (the turn order and odds, using the names the attacks have in the battle), followed by a description of their unique attacks. **Keep the programs up to date when a script changes**: this record should always match what is in the game. Write amounts as decimals or fractions (1.2x speed, 1/3), and every turn as its three choices (A / B / C), not as odds in words.
 
 How to read them:
 
@@ -28,14 +28,14 @@ How to read them:
 
 ## Ultimaro
 
-Umaro at 2x the size of his sprite (without the shadow under his feet: he is in the air).
+Umaro at 2x the size of his sprite (with the shadow under his feet removed).
 
-**Stats:** final Kefka's, with +5 levels (after scaling and objectives) and 1.2x speed. Absorbs ice, as Umaro does.
+**Stats:** final Kefka's, with +5 levels (after scaling and objectives) and 1.2x speed. Absorbs ice.
 
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "Yeti used a Green Cherry!", and he charges up as a green cherry appears
+1. "Yeti used a Green Cherry!", charge up animation plays with a green cherry sprite
 2. U'ghaaaa
 3. Meteor
 
