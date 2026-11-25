@@ -3990,6 +3990,14 @@ The sixth custom final boss on branch `final-boss` (`-fb juggernaut`, `final_bos
 - So for a monster's wall (`golem_mod`): in the physical-damage hook (C2/0C2D) `STY $3A82` when his wall has HP, and hook C2/6316-6322 to take the damage from his wall and not `$3A36` when Y is a monster. The first version zeroed `$F0` there, which showed 0.
 - Soul Flare (`mp_damage_mod(mp_cap = True)`): damage capped to the target's MP by lowering `$33D0,Y` just before C2/13A7 in the deal-HP-damage hook (C2/1323), so the number shown is the capped one.
 
+### Negarapa, and Condemned counters in the final death (2026-11, branch `final-boss`)
+
+- **Vanilla bug:** if any character's Condemned counter is shown when final Kefka's death animation runs, dark vertical bars cover the whole background for the length of the dissolve. Zeroing the counters (`$3B05 + 2*slot`, and their displayed copies `$202A + slot`, copied at C2/5C54) removes them. Fix (`no_counters_in_final_death_mod`): hook the enemy script's animation command handler (0xFA, C2/642D; `$B6` = its first byte) and zero both when the animation is 0x0D, the final death.
+- **Condemned's count** (C2/09B4) is 81 - (caster level + random(caster level)), at least 20: a level 71 caster always gives 20, about 40 seconds. It is only started when the status is newly set (bit 5 of `$3204,X`), so casting it again on someone still condemned does not restart it. A status in an attack's data (Goner's byte 11 |= 0x01) sets it along with the damage.
+- **Monster special attack looks:** `CF/37C0 + enemy` is an index into a table of 8-byte entries at EC/E6E8 (weapons use the same format at EC/E400): byte 3 = the picture of the hit (0 diagonal line, 2-4 arcs, 5 horizontal line, 7 three claw lines, 9 a spark), byte 4 = its palette (0x35 red, 0x39 orange-red, 0x34 orange, 0x30/0x31 green, 0x33 blue, 0x32 white-blue, 0x38/0x3C yellow), byte 6 = its sound (0x5B the Flail's). Entry 29 is used by no vanilla monster.
+- **Final Kefka's laughing head** (animation 399) is a decapitated head in profile, looking up and to the right: nose = the point at the upper right, one eye left of it, open mouth under it showing a row of teeth, chin = the point at the right middle, and blood trailing under the neck at the lower left. `$SP`-side reader: decode the 4x4 8x8 tiles of its layout (3bpp at D3/0000) with the palette at D2/6000 + 16 * palette byte.
+- An enemy script's first-turn block (`If 21 36 0 ... EndIf`, a once-only bit) can hold attacks and an `EndTurn`: Negarapa's four Condemned casts are there.
+
 ### Regen and Seizure are blocked together (2026-11)
 
 - For Kirin's Regen to take on the final boss, both `regen` and `seizure` have to be cleared in `status_immunities`: C2/2675 makes a monster that blocks one of the pair block the other. So a boss with Regen can also be sapped. His Regen heals about 230-250 a tick at 30000 of 62000 HP.
