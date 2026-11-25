@@ -319,12 +319,12 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 **Her first turn:** Condemned on each of the party.
 
 **Below 13% HP** (if she is charging up from the list below when her HP gets here, she does that one first):
-1. She charges up
+1. "Mwa-ha-ha... You think", then "I'm going to let you escape?", and she charges up
 2. Last Rites
 3. Meteor
 
 **At 53% HP and below:**
-1. She charges up
+1. "Mwa-ha-ha... You think", then "I'm going to let you escape?", and she charges up
 2. Last Rites
 3. Quartr / Fire 3 / X-Zone, then Demon Whip / Doom / nothing
 4. Merton / Quartr / Battle, then Flare / nothing / nothing
@@ -346,6 +346,7 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 ### Attacks
 
 - **Condemned** counts down over each one's head, and Doom is cast on them when it gets to 0. The count starts at 81 - (her level + a number below her level), and at 20 at the least: at her level of 71 it is always 20, which was 40 seconds for a party that did nothing. One who dies and is raised is no longer condemned.
+- What she says before Last Rites is Nerapa's one line in the game. The box at the top holds 32 letters, so it is said in two texts, one after the other.
 - **Last Rites** is Goner, renamed, and it sets Condemned on those it hits: on those who are no longer condemned. One who still is keeps the count they have.
 - **Demon Whip** is final Kefka's Havoc Wing (her special: a blow at 4x damage), renamed, and shown as a red line across its target with the sound of a flail (a blow of its own in the table of the blows that specials are shown with, which no monster used).
 - **Demi** takes 1/2 of the HP its target has, **Quartr** 3/4 from the whole party, and **Shimsham** 1/2. **Doom** and **X-Zone** (the whole party) kill those who are not protected from death. **Roulette** kills the one its cursor stops on, of everyone in the battle: she is protected. Reflect sends Demi, Quartr, Doom and X-Zone back at her, and they do nothing to her.

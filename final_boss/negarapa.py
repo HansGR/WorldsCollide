@@ -23,6 +23,11 @@ class Negarapa(FinalBoss):
     ABILITY_NAMES = {
         "Goner"     : "Last Rites",
     }
+    # nerapa's one line in the game, before last rites. the box holds 32 letters: it is said in two
+    # texts, the second in the place of one of vargas's that the randomizer never shows
+    GONER_TEXT = "Mwa-ha-ha... You think<wait 30 frames><end>"
+    GONER_TEXT_2, GONER_TEXT_2_ID = "I'm going to let you escape?<wait 60 frames><end>", 0x12
+    GONER_TEXT_ID = 140
     CONDEMNED = "Condemned"
     CHARACTERS = [0x48, 0x49, 0x4a, 0x4b]   # targets: each of the party (condemned is for one)
     ATTACKER = 0x47                         # target: who hit her last
@@ -98,6 +103,13 @@ class Negarapa(FinalBoss):
         script.replace(ai_instr.RandomAttack(special, special, nothing),
                        ai_instr.RandomAttack(flare, nothing, nothing))
 
+        # the second half of what she says before last rites, after the first (both times it is said)
+        instructions = script.instructions
+        said = [index for index, instruction in enumerate(instructions) if instruction == ai_instr.Message(self.GONER_TEXT_ID)]
+        assert len(said) == 2
+        for index in reversed(said):
+            script.insert(index + 1, [ai_instr.Message(self.GONER_TEXT_2_ID)])
+
         # hit: below 17% hp final kefka's own (nothing, battle or ultima). at any other hp one of
         # her counters on who hit her: in the place of his below 49% hp, and (the last of what she
         # does when she is hit, under the same conditions as kefka's own) above that, where he
@@ -117,6 +129,8 @@ class Negarapa(FinalBoss):
         from data.ability_data import AbilityData
 
         self.rename_abilities(data, self.ABILITY_NAMES)
+        self.goner_text_mod(data, self.GONER_TEXT, room = True)
+        data.dialogs.set_single_line_battle_text(self.GONER_TEXT_2_ID, self.GONER_TEXT_2)
 
         # last rites: goner also sets condemned on those it hits
         status = ABILITY_DATA_START + name_id["Goner"] * AbilityData.DATA_SIZE + self.STATUS_2_BYTE
