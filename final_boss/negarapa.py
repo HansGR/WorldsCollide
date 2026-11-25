@@ -93,16 +93,19 @@ class Negarapa(FinalBoss):
         script.replace(ai_instr.RandomAttack(special, special, nothing),
                        ai_instr.RandomAttack(flare, nothing, nothing))
 
-        # hit, at any hp (not while she charges up): one of her counters on who hit her, in the
-        # place of final kefka's below 17% and below 49% hp. after what she does when she dies
-        instructions = script.instructions
-        counters = instructions.index(ai_instr.EndIf(), instructions.index(ai_instr.EndMainLoop())) + 1
-        instructions[counters:len(instructions) - 1] = [
+        # hit: below 17% hp final kefka's own (nothing, battle or ultima). at any other hp one of
+        # her counters on who hit her: in the place of his below 49% hp, and (the last of what she
+        # does when she is hit, under the same conditions as kefka's own) above that, where he
+        # does nothing
+        counter = ai_instr.RandomAttack(*(name_id[name] for name in self.COUNTERS))
+        script.replace(ai_instr.RandomAttack(nothing, battle, name_id["HyperDrive"]), counter)
+        script.insert(len(script.instructions) - 1, [
+            ai_instr.EndIf(),
             ai_instr.If(self.NOT_CHARGING, 0x00, 0x00),
             ai_instr.If(self.HIT, 0x00, 0x00),
             ai_instr.SetTarget(self.ATTACKER),
-            ai_instr.RandomAttack(*(name_id[name] for name in self.COUNTERS)),
-        ]
+            counter,
+        ])
 
     def data_mod(self, data):
         from data.spell_names import name_id

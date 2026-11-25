@@ -335,7 +335,9 @@ Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her h
 3. Fire 3 / Doom / Demon Whip
 4. Battle / Roulette / nothing
 
-**When she is hit**, at any HP (not while she charges up): Demi / Shimsham / nothing, on who hit her.
+**When she is hit:**
+- Below 17% HP, when damaged (not while she charges up or in the turns after Last Rites): nothing / Battle / Ultima
+- At any other HP (not while she charges up): Demi / Shimsham / nothing, on who hit her
 
 **When she dies:** the final death, and every enemy goes with her.
 
