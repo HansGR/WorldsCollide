@@ -1027,6 +1027,42 @@ class FinalBoss:
             asm.JSR(space.start_address, asm.ABS),
         )
 
+    def no_counters_in_final_death_mod(self):
+        # the game's own bug: if any of the party is condemned when the final boss dies, dark bars
+        # are over the whole background while he crumbles (the numbers over the condemned are
+        # still drawn, into what the final death uses). when an enemy's script starts the final
+        # death (its animation command, 0xfa, with 0x0d), the counters are stopped and no longer
+        # shown: the battle is over
+        # 8 bit a, x and y
+        ANIMATE_START, ANIMATE_END = 0x2642d, 0x26433
+        FINAL_DEATH = 0x0d
+        animation, bytes_2_3, animation_bytes_2_3 = 0xb6, 0xb8, 0x3a2a
+        counters, shown_counters, CHARACTERS = 0x3b05, 0x202a, 4
+
+        assert Read(ANIMATE_START, ANIMATE_END) == [0xc2, 0x20, 0xa5, 0xb8, 0x8d, 0x2a, 0x3a]
+        src = [
+            asm.LDA(animation, asm.DIR),
+            asm.CMP(FINAL_DEATH, asm.IMM8),
+            asm.BNE("AS_IT_IS"),
+        ]
+        for character in range(CHARACTERS):
+            src += [
+                asm.STZ(counters + character * 2, asm.ABS),
+                asm.STZ(shown_counters + character, asm.ABS),
+            ]
+        src += [
+            "AS_IT_IS",
+            asm.A16(),
+            asm.LDA(bytes_2_3, asm.DIR),
+            asm.STA(animation_bytes_2_3, asm.ABS),
+            asm.RTL(),
+        ]
+        final_death = Write(Bank.F0, src, "final boss: no condemned counters in the final death")
+        space = Reserve(ANIMATE_START, ANIMATE_END, "enemy script animation command", asm.NOP())
+        space.write(
+            asm.JSL(final_death.start_address_snes),
+        )
+
     def half_damage_mod(self, elements):
         # he takes half the damage of these elements. an enemy's data has the elements it is weak
         # to, absorbs and takes no damage from, and none for half: that is a character's, from

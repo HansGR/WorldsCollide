@@ -125,6 +125,9 @@ class Negarapa(FinalBoss):
     def battle_mod(self):
         self.giant_sprite_mod(self.nerapa, scale = self.SCALE, lower = self.LOWER, right = self.RIGHT)
 
+        # the party is condemned when she dies, more often than not
+        self.no_counters_in_final_death_mod()
+
         # demon whip
         used = Read(self.SPECIAL_ATTACK_GRAPHICS, self.SPECIAL_ATTACK_GRAPHICS + self.ENEMIES - 1)
         assert self.WHIP_GRAPHIC not in used, "a monster's special attack is shown with it"
