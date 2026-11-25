@@ -307,6 +307,47 @@ TunnelArmr at 1.33x the size of his sprite (127x79 pixels, the most that fits a 
 - **Atomic Ray** (fire, the whole party), **Shrapnel** (no element) and **Diffuser** (bolt, the whole party) are the armors' attacks, where final Kefka has Fire 3, Ice 3 and Bolt 3.
 - **Crush** is HyperDrive, renamed, with the looks of Io's Crush (`attack_special_animation_mod`).
 
+
+## Negarapa
+
+Nerapa at 1.75x the size of her sprite (112 pixels high: at twice the size her head would be behind the boxes at the top of the screen), 16 pixels lower. Death on a clock: she starts as Nerapa does, with Condemned on each of the party, and her attacks kill outright or take a part of the HP there is, with Nerapa's fire.
+
+**Stats:** final Kefka's, with +0 levels. She absorbs fire, as Nerapa does, and is weak to ice and pearl.
+
+### Battle program
+
+**Her first turn:** Condemned on each of the party.
+
+**Below 13% HP** (if she is charging up from the list below when her HP gets here, she does that one first):
+1. She charges up
+2. Last Rites
+3. Meteor
+
+**At 53% HP and below:**
+1. She charges up
+2. Last Rites
+3. Quartr / Fire 3 / X-Zone, then Demon Whip / Doom / nothing
+4. Merton / Quartr / Battle, then Flare / nothing / nothing
+
+**Above 53% HP:**
+1. Fire 3 / S. Cross / Demon Whip
+2. Battle / Demi / nothing
+3. Fire 3 / Doom / Demon Whip
+4. Battle / Roulette / nothing
+
+**When she is hit**, at any HP (not while she charges up): Demi / Shimsham / nothing, on who hit her.
+
+**When she dies:** the final death, and every enemy goes with her.
+
+### Attacks
+
+- **Condemned** counts down over each one's head, and Doom is cast on them when it gets to 0. The count starts at 81 - (her level + a number below her level), and at 20 at the least: at her level of 71 it is always 20, which was 40 seconds for a party that did nothing. One who dies and is raised is no longer condemned.
+- **Last Rites** is Goner, renamed, and it sets Condemned on those it hits: on those who are no longer condemned. One who still is keeps the count they have.
+- **Demon Whip** is final Kefka's Havoc Wing (her special: a blow at 4x damage), renamed, and shown as a red line across its target with the sound of a flail (a blow of its own in the table of the blows that specials are shown with, which no monster used).
+- **Demi** takes 1/2 of the HP its target has, **Quartr** 3/4 from the whole party, and **Shimsham** 1/2. **Doom** and **X-Zone** (the whole party) kill those who are not protected from death. **Roulette** kills the one its cursor stops on, of everyone in the battle: she is protected. Reflect sends Demi, Quartr, Doom and X-Zone back at her, and they do nothing to her.
+- **S. Cross** is fire on the whole party, and **Merton** is fire and wind on everyone on both sides, not dodged: she absorbs it.
+- Before Last Rites a skull is shown where final Kefka's laughing head is: the shape of his head, a floating head and what trails under it (`graphics/skull.py`).
+
 ## How a final boss is made
 
 Every final boss is final Kefka's enemy (298), in his formation and running his battle script, made over. A final boss is a subclass of `FinalBoss` (`final_boss/final_boss.py`), whose methods are called as the seed is built:
