@@ -4,19 +4,19 @@
 
 | Value | Final boss |
 |-------|------------|
-| `kefka` | Kefka, as he is. The default; `-fb` is then left out of the flag string, so seeds rolled without it stay the same |
-| `ultimaro` | Ultimaro: a giant Umaro |
-| `uncleulty` | Uncle Ulty: a giant Ultros |
-| `grampaluma` | Grampaluma: a giant Dadaluma who calls in ChromeFists |
-| `kingpug` | King Pug: a giant Pug with WallChange and Life Mine |
-| `czardragon` | CzarDragon: the game's unused boss, with the highest magic of all eight elements |
-| `juggernaut` | Juggernaut: a giant TunnelArmr, armored against blows, who answers magic |
-| `negarapa` | Negarapa: a giant Nerapa, who condemns the party and kills outright or by parts of the HP there is |
-| `random` | One of the above, chosen by the seed. The spoiler log names it |
+| `kefka` | Final Kefka, the default choice. If `-fb kefka` is declared, it is dropped from the flag string |
+| `ultimaro` | Ultimaro: a giant Umaro, fast and aggressive |
+| `uncleulty` | Uncle Ulty: a giant Ultros, lots of status effects |
+| `grampaluma` | Grampaluma: a giant Dadaluma, fast and supported by ChromeFists |
+| `kingpug` | King Pug: a giant Pug with heavy stabs, WallChange, and slow/stop/sleep magic |
+| `czardragon` | CzarDragon: the game's unused boss, omnimage with all eight elements |
+| `juggernaut` | Juggernaut: a giant TunnelArmr, high defense, counters magic, and zaps your MP |
+| `negarapa` | Negarapa: a giant Nerapa, specializing in condemn, death, and fractional HP reduction |
+| `random` | One of the above, chosen randomly. Choice is named in the spoiler log |
 
 ## Battle programs
 
-Each boss below has its **battle program** first (the turn order and the odds, by the names the attacks have in the battle), then what its attacks are. **Keep the programs up to date when a script changes**: they are what a playtester reads. Write amounts as decimals or fractions (1.2x speed, 1/3), and every turn as its three choices (A / B / C), not as odds in words.
+Each bosses **battle program** is listed first (the turn order and odds, using the names the attacks have in the battle), followed by a description of their unique attacks. **Keep the programs up to date when a script changes**: this record should always match what is in the game. Write amounts as decimals or fractions (1.2x speed, 1/3), and every turn as its three choices (A / B / C), not as odds in words.
 
 How to read them:
 
@@ -28,14 +28,14 @@ How to read them:
 
 ## Ultimaro
 
-Umaro at 2x the size of his sprite (without the shadow under his feet: he is in the air).
+Umaro at 2x the size of his sprite (with the shadow under his feet removed).
 
-**Stats:** final Kefka's, with +5 levels (after scaling and objectives) and 1.2x speed. Absorbs ice, as Umaro does.
+**Stats:** final Kefka's, with +5 levels (after scaling and objectives) and 1.2x speed. Absorbs ice.
 
 ### Battle program
 
 **Below 13% HP** (if he is charging up from the list below when his HP gets here, he does that one first):
-1. "Yeti used a Green Cherry!", and he charges up as a green cherry appears
+1. "Yeti used a Green Cherry!", charge up animation plays with a green cherry sprite
 2. U'ghaaaa
 3. Meteor
 
@@ -62,16 +62,16 @@ Umaro at 2x the size of his sprite (without the shadow under his feet: he is in 
 
 ### Attacks
 
-- **Yeti Punch** is Havoc Wing (his special: a blow at 4x damage), with the looks of Umaro's Tackle.
-- **Yeti Blast** is HyperDrive and **U'ghaaaa** is Goner, renamed.
-- **Enrager** is Revenger remade: the Bserk spell on the whole party at 0.5x its hit rate (75), which Reflect and Runic do not stop.
-- **Jump**: as Umaro jumps. He lands 2 to 4 times, as with a Dragon Horn: down and straight back up for each landing, with the damage showing as he leaves.
-- The green cherry is in the place of Kefka's laughing head. Its art is `graphics/green_cherry.py`.
-- From final Kefka's script: Storm was Fire 3, Surge was Bolt 3, the Ice 3 at 53% and below was Train, and the two Jumps were a Revenger and a Havoc Wing.
+- **Yeti Punch** is Havoc Wing (his special: a blow at 4x damage), with the animation of Umaro's Tackle.
+- **Yeti Blast** is HyperDrive 
+- **U'ghaaaa** is Goner, renamed.
+- **Enrager** overwrites Revenger: casts the Bserk spell on the whole party at 0.5x its hit rate (75), not blocked by Reflect or Runic.
+- **Jump**: as Umaro jumps. Ultimaro lands 2 to 4 times (as with a Dragon Horn).
+- A green cherry replaces Kefka's laughing severed head. Its art is `graphics/green_cherry.py`.
 
 ## Uncle Ulty
 
-Ultros (the one with all his tentacles) at 2x the size of his sprite, without his shadow, and low enough on the screen to be clear of the boxes at the top.
+Ultros at 2x the size of his sprite, without his shadow, and low enough on the screen to be clear of the textboxes at the top.
 
 **Stats:** final Kefka's, with +5 levels (after scaling and objectives), 1.0x speed, and 65535 HP (1.1x Kefka's 62000 would be 68200: 65535 is the most an enemy can have, 1.057x). Absorbs water.
 
