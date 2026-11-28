@@ -36,7 +36,7 @@ KEFKA = 298
 SPECS, GRAPHICS, LARGE_MOLDS, MONSTER_PALETTES = 0x127000, 0x297000, 0x12ac24, 0x127820
 KEFKA_SPEC = bytes.fromhex("3650820c20")
 KEFKA_TILES = 149
-SMALL_MOLDS, SMALL_MOLD_COUNT, ONE_TILE_MOLD = 0x12a824, 128, bytes([0x80, 0, 0, 0, 0, 0, 0, 0])
+SMALL_MOLDS, SMALL_MOLD_COUNT, ENEMIES = 0x12a824, 128, 384
 
 FORMATIONS, FORMATION_SIZE, SLOTS = 0xf6200, 15, 6
 ENEMY_NAMES, ENEMY_NAME_SIZE = 0xfc050, 10
@@ -128,29 +128,37 @@ def main():
     rom[at_palette:at_palette + 32] = palette
 
     # the enemies of the three tiers have a sprite (all nine have the same, a beast that was a part
-    # of the statue's picture): they get one that is not seen. a mold that has its first tile only
-    # (the battle hangs on a mold with nothing in its first row), and a tile of the monsters'
-    # graphics that is empty
-    molds = [index for index in range(SMALL_MOLD_COUNT) if rom[SMALL_MOLDS + index * 8:SMALL_MOLDS + index * 8 + 8] == ONE_TILE_MOLD]
+    # of the statue's picture): they get one that is not seen, of one tile of the monsters'
+    # graphics that is empty. the hand that points at an enemy is where its sprite is: a position
+    # is in steps of 8 pixels and no more than 15 of them, so the one tile is also this many tiles
+    # to the right in its mold (the battle hangs on a mold with nothing in its first row: the tile
+    # is in it). the molds are written over ones that no enemy has
     empty = [address for address in range(GRAPHICS, GRAPHICS + 0x7fff * 8, 8) if not any(rom[address:address + 32])]
-    if not molds or not empty:
-        fail("no mold of one tile, or no empty tile, for the enemies of the tiers")
+    used = {rom[SPECS + enemy * 5 + 4] for enemy in range(ENEMIES) if not rom[SPECS + enemy * 5 + 2] & 0x80}
+    free = [index for index in range(SMALL_MOLD_COUNT - 1, -1, -1) if index not in used]
+    positions = {int(formation): where for formation, where in data["positions"].items()}
+    shifts = sorted({shift for where in positions.values() for x, y, shift in where})
+    if not empty or len(free) < len(shifts):
+        fail("no empty tile, or no molds that are not in use, for the enemies of the tiers")
+    molds = {}
+    for shift, index in zip(shifts, free):
+        rom[SMALL_MOLDS + index * 8:SMALL_MOLDS + index * 8 + 8] = bytes([0x80 >> shift, 0, 0, 0, 0, 0, 0, 0])
+        molds[shift] = index
     pointer = (empty[0] - GRAPHICS) // 8
-    for enemies in TIER_ENEMIES.values():
-        for enemy in enemies:
+    for formation, enemies in TIER_ENEMIES.items():
+        for enemy, (x, y, shift) in zip(enemies, positions[formation]):
             tier_spec = SPECS + enemy * 5
-            rom[tier_spec:tier_spec + 5] = bytes([pointer & 0xff, pointer >> 8, rom[tier_spec + 2] & 0x03, rom[tier_spec + 3], molds[0]])
+            rom[tier_spec:tier_spec + 5] = bytes([pointer & 0xff, pointer >> 8, rom[tier_spec + 2] & 0x03, rom[tier_spec + 3], molds[shift]])
 
     # his name, where the enemies are named
     name = ENEMY_NAMES + KEFKA * ENEMY_NAME_SIZE
     rom[name:name + ENEMY_NAME_SIZE] = bytes(LETTERS[letter] for letter in "Santa") + bytes([0xff] * (ENEMY_NAME_SIZE - 5))
 
     # where the enemies are
-    positions = {int(formation): where for formation, where in data["positions"].items()}
-    positions[KEFKA_FORMATION] = [santa["position"]]
+    positions[KEFKA_FORMATION] = [santa["position"] + [0]]
     for formation, where in positions.items():
         start, slots = formation_slots(rom, formation)
-        for (slot, enemy), (x, y) in zip(slots, where):
+        for (slot, enemy), (x, y, shift) in zip(slots, where):
             rom[start + 8 + slot] = (x << 4) | y
 
     open(sys.argv[2], "wb").write(rom)

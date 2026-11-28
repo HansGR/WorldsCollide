@@ -27,7 +27,9 @@ why and writes nothing.
   128 tiles, a tilemap and 2 palettes of 15 colors: what the scroll from one tier to the next has
   room for.
 - **The enemies of the tiers** all have the same sprite, a beast that was part of the statue. They
-  get one that is not seen, and their positions are points on the reindeer.
+  get one that is not seen, and their positions are points on the reindeer: the hand that points
+  at an enemy is where its sprite is. A position is in steps of 8 pixels and 15 of them at the
+  most, so for a reindeer further right its one tile is some tiles into its mold.
 - **Santa** is final Kefka's sprite: his tiles, mold and palette are written over Kefka's own, and
   his name.
 - The new tiles and tilemaps go to an empty bank of the ROM (F1 and F3 to FF are empty in a

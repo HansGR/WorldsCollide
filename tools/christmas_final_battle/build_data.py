@@ -265,11 +265,14 @@ data = {
         "graphics": bytes(graphics).hex(), "mold": bytes(mold).hex(), "position": POSITION,
         "palette": bytes([0, 0] + sum(([color(c) & 0xff, color(c) >> 8] for c in santa_palette), [])).hex(),
     },
-    # where the enemies of each tier are: a point on each reindeer (x, y: steps of 8 pixels, 15 at most; their sprite is one tile that is not seen), in the order of the formation's slots that are used
+    # where the enemies of each tier are: a point on each reindeer, in the order of the formation's
+    # slots that are used. x and y in steps of 8 pixels (15 at most), and how many more steps of 8
+    # to the right (their sprite, one tile that is not seen, is that far into its mold): the hand
+    # points at about 16 pixels right of and 12 below that
     "positions": {
-        str(0x1d7): [[6, 11], [15, 11], [12, 7]],              # short arm, long arm, face: the three reindeer
-        str(0x200): [[5, 10], [15, 12], [15, 9], [11, 10]],    # hit, tiger, tools, magic: the four of the middle
-        str(0x201): [[10, 8], [14, 8]],                        # girl, sleep: the two under santa
+        str(0x1d7): [[6, 11, 0], [15, 11, 3], [12, 7, 0]],                 # short arm, long arm, face: the three reindeer
+        str(0x200): [[5, 10, 0], [15, 12, 2], [15, 9, 2], [11, 10, 0]],    # hit, tiger, tools, magic: the four of the middle
+        str(0x201): [[10, 8, 0], [14, 8, 0]],                              # girl, sleep: the two under santa
     },
 }
 data["backgrounds"][str(0x36)] = background_data(0x36, small(source, tier_4_left, tier_4_top))
