@@ -14,12 +14,12 @@ class KingPug(FinalBoss):
 
     PUG = "Pug"
 
-    # his sprite (graphics/king_pug.py: pug's at 1.5x with a crown drawn at that size, 48x48 pixels)
-    # at 2x: 96x96. where he is in his mold, in pixels: lower, to be clear of the boxes at the top,
-    # and such that the glass of his lantern (the middle of it is at 86, 76 of his sprite at 2x) is
-    # under the glow's (which is 4 pixels below the middle of its picture)
-    SCALE = (2, 1)
-    LOWER, RIGHT = 30, 11
+    # his sprite (graphics/king_pug.py: pug as a later release of the game drew him, 96x97 pixels,
+    # with a crown drawn at that size) as it is. where he is in his mold, in pixels: lower, to be
+    # clear of the boxes at the top, and such that the glass of his lantern is under the glow's
+    # (which is in the middle of its picture, and is placed in steps of 16 pixels)
+    SCALE = (1, 1)
+    LOWER, RIGHT = 27, 11
     GLOW_MOVE = (2, 1)                      # the glow: 32 pixels left and 16 down from the laughing head's place
 
     SPECIAL_NAME = "Cleaver"                # was havoc wing
